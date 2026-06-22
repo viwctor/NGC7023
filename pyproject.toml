@@ -1,0 +1,28 @@
+[project]
+name = "ngc7023"
+version = "0.1.0"
+description = "Local-first downloader (yt-dlp) + media/PDF converter (FFmpeg). Python rewrite of the Tauri app."
+requires-python = ">=3.11"
+dependencies = [
+    "pywebview>=5.3",   # native webview shell (WebView2 on Windows, webkit2gtk on Linux)
+    "psutil>=6.0",      # CPU / RAM / system info
+    "pypdf>=4.0",       # PDF page ops (merge / extract / delete pages)
+    "pypdfium2>=4.0",   # PDF -> image rasterizing (bundles its own pdfium binary)
+    "pystray>=0.19",    # system-tray icon
+    "pillow>=10.0",     # tray icon image + image -> PDF
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ngc7023"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

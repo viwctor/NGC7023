@@ -1,0 +1,1114 @@
+/* NGC7023 — the whole app is one terminal. A classic menu bar on top, a single
+   scrolling terminal screen below. Flat, monospace, NGC 7023 (Iris Nebula)
+   blues. Themes swap only the color variables. */
+
+:root {
+  --bg: #04060a;
+  --bg-soft: #080b12;
+  --line: #16203a; /* dim rules / separators */
+  --text: #c6d2f0;
+  --dim: #5c6a8c; /* secondary text */
+  --blue: #4d8dff;
+  --cyan: #6ad7ff; /* prompt / accent */
+  --peri: #8aa0ff;
+  --amber: #ffd27d;
+  --magenta: #c77fb0;
+  --ok: #5ce39b;
+
+  /* Syntax-highlight accents (used like code tokens, blue still dominant). */
+  --str: #9ece6a; /* "strings": formats, file names */
+  --num: #e0af68; /* numbers: quality, speed, fps, crop */
+  --kw: #bb9af7; /* keyword/operator purple, for sparing emphasis */
+  --red: #f7768e; /* pdf / errors */
+
+  --mono: "Consolas", "Cascadia Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+
+/* ── Themes (swap only colors) ───────────────────────────── */
+:root[data-theme="supernova"] {
+  --bg: #0a0710;
+  --bg-soft: #130c1f;
+  --line: #2a1f40;
+  --text: #e0d6f5;
+  --dim: #7a6b9c;
+  --blue: #a06bff;
+  --cyan: #5fd9ff;
+  --peri: #b58aff;
+  --amber: #ffd27d;
+  --magenta: #ff7bd0;
+  --ok: #6ce3a0;
+  --str: #8ee06a;
+  --num: #ffc24d;
+  --kw: #ff7bd0;
+  --red: #ff5d8a;
+}
+:root[data-theme="crimson"] {
+  --bg: #0d0608;
+  --bg-soft: #170a0d;
+  --line: #3a1f24;
+  --text: #f3d2d6;
+  --dim: #9c6b73;
+  --blue: #ff5d6c;
+  --cyan: #ff9e5c;
+  --peri: #ff9aa5;
+  --amber: #ffcf6b;
+  --magenta: #ff6baa;
+  --ok: #7be3a0;
+  --str: #9ee06a;
+  --num: #ffb14d;
+  --kw: #ff86c2;
+  --red: #ff4d5e;
+}
+:root[data-theme="solar"] {
+  --bg: #0c0a04;
+  --bg-soft: #15110a;
+  --line: #3a3115;
+  --text: #f3ecc8;
+  --dim: #9c8f5f;
+  --blue: #ffd84d;
+  --cyan: #ffae3c;
+  --peri: #ffe27a;
+  --amber: #ffd84d;
+  --magenta: #ff9e6b;
+  --ok: #b6e05a;
+  --str: #b6e05a;
+  --num: #ffc24d;
+  --kw: #ff9e3c;
+  --red: #ff7a5c;
+}
+:root[data-theme="cluster"] {
+  --bg: #eef1f8;
+  --bg-soft: #e2e7f2;
+  --line: #c2cadd;
+  --text: #141826;
+  --dim: #565f7a;
+  --blue: #2563ff;
+  --cyan: #0891b2;
+  --peri: #6d28d9;
+  --amber: #c2410c;
+  --magenta: #be185d;
+  --ok: #15803d;
+  --str: #15803d;
+  --num: #c2410c;
+  --kw: #7c3aed;
+  --red: #dc2626;
+  color-scheme: light;
+}
+:root[data-theme="matrix"] {
+  --bg: #000000;
+  --bg-soft: #021002;
+  --line: #0d3a14;
+  --text: #00ff66;
+  --dim: #1f8f3f;
+  --blue: #00ff66;
+  --cyan: #6affa0;
+  --peri: #00cc55;
+  --amber: #aaff66;
+  --magenta: #66ffaa;
+  --ok: #00ff66;
+  --str: #66ff99;
+  --num: #b6ffb6;
+  --kw: #00ff99;
+  --red: #66ff99;
+}
+
+/* RGB: every accent cycles the spectrum on the SAME hue, in sync — like RGB
+   hardware shifting as one. Only lightness varies, for legibility. */
+@property --rgbhue {
+  syntax: "<number>";
+  initial-value: 0;
+  inherits: true;
+}
+@keyframes rgb-cycle {
+  to {
+    --rgbhue: 360;
+  }
+}
+:root[data-theme="rgb"] {
+  --bg: #050509;
+  --bg-soft: #0b0b14;
+  --line: #23233a;
+  --text: #e8e8f2;
+  --dim: #7a7a90;
+  animation: rgb-cycle 6s linear infinite;
+  --blue: hsl(var(--rgbhue) 90% 66%);
+  --cyan: hsl(var(--rgbhue) 90% 72%);
+  --peri: hsl(var(--rgbhue) 85% 76%);
+  --amber: hsl(var(--rgbhue) 90% 64%);
+  --magenta: hsl(var(--rgbhue) 88% 70%);
+  --ok: hsl(var(--rgbhue) 75% 62%);
+  --str: hsl(var(--rgbhue) 80% 66%);
+  --num: hsl(var(--rgbhue) 88% 60%);
+  --kw: hsl(var(--rgbhue) 85% 74%);
+  --red: hsl(var(--rgbhue) 90% 66%);
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+}
+
+::selection {
+  background: var(--blue);
+  color: #04060a;
+}
+
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Custom titlebar (native decorations are off) ─────────── */
+.titlebar {
+  flex-shrink: 0;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  user-select: none;
+  padding-left: 0.6rem;
+}
+.tb-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 100%;
+  flex: 1;
+}
+.tb-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+.tb-name {
+  color: var(--dim);
+  font-size: 0.78rem;
+}
+.tb-name::before {
+  content: "❯ ";
+  color: var(--cyan);
+}
+.tb-controls {
+  display: flex;
+  height: 100%;
+}
+.tb-btn {
+  width: 42px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.tb-btn:hover {
+  background: var(--bg-soft);
+  color: var(--text);
+}
+.tb-close:hover {
+  background: #e81123;
+  color: #fff;
+}
+
+/* ── Menu bar ─────────────────────────────────────────────── */
+.menubar {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.mb-bar {
+  display: flex;
+  gap: 0.05rem;
+  list-style: none;
+  margin: 0;
+  padding: 0 0.3rem;
+}
+.mb-rootli {
+  position: relative;
+}
+.mb-root {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+.mb-root:hover,
+.mb-rootli.open > .mb-root {
+  background: var(--bg-soft);
+  color: var(--cyan);
+}
+.mb-drop {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 9.5rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  padding: 0.25rem 0;
+  margin: 0;
+  list-style: none;
+  z-index: 50;
+  box-shadow: 0 10px 26px -10px #000;
+}
+.mb-subli {
+  position: relative;
+}
+.mb-nested {
+  position: absolute;
+  top: -0.26rem;
+  left: 100%;
+  display: none;
+}
+.mb-subli:hover > .mb-nested {
+  display: block;
+}
+/* Edge collision: a root dropdown that would overflow the right edge opens
+   leftward (right-aligned); a submenu that would overflow opens to its left. */
+.mb-drop.flipx {
+  left: auto;
+  right: 0;
+}
+.mb-nested.flip {
+  left: auto;
+  right: 100%;
+}
+
+.mb-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  color: var(--text);
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mb-item:hover {
+  background: var(--blue);
+  color: var(--bg);
+}
+.mb-has {
+  justify-content: space-between;
+}
+.mb-arrow {
+  color: var(--dim);
+  margin-left: 0.6rem;
+}
+.mb-item:hover .mb-arrow {
+  color: var(--bg);
+}
+.mb-mark {
+  display: inline-block;
+  width: 1.1rem;
+  flex-shrink: 0;
+  color: var(--cyan);
+  white-space: pre;
+}
+/* "this subcategory has a user-set preset" dot. */
+.mb-dot {
+  color: var(--cyan);
+  font-weight: 700;
+}
+/* File/folder upload row: shortened name + an × to remove it. */
+.mb-path {
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.mb-path-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 11rem;
+}
+.mb-path-x {
+  background: transparent;
+  border: none;
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 0.95em;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  flex-shrink: 0;
+}
+.mb-path:hover .mb-path-x {
+  color: var(--red);
+}
+.mb-radio.on {
+  color: var(--cyan);
+  font-weight: 700;
+}
+.mb-fmt-video.on {
+  color: var(--cyan);
+}
+.mb-fmt-audio.on {
+  color: var(--str);
+}
+.mb-fmt-image.on {
+  color: var(--kw);
+}
+.mb-fmt-pdf.on {
+  color: var(--red);
+}
+.mb-rule {
+  height: 0;
+  border-top: 1px solid var(--line);
+  margin: 0.25rem 0;
+  list-style: none;
+}
+.mb-custom {
+  padding: 0.45rem 0.8rem;
+  cursor: default;
+}
+.mb-num {
+  width: 6rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--num);
+  font-family: var(--mono);
+  padding: 0.25rem 0.4rem;
+}
+.mb-num:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+.tc-grid {
+  display: flex;
+  gap: 0.6rem;
+}
+.mb-tc {
+  width: 6.5rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--num);
+  font-family: var(--mono);
+  text-align: center;
+  padding: 0.3rem 0.4rem;
+}
+.mb-tc:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
+
+/* ── Terminal screen (the whole working area) ─────────────── */
+.term-screen {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.3rem 1.5rem;
+  font-size: var(--term-font, 14px); /* chosen in preferências › fonte */
+  line-height: 1.55;
+  cursor: text;
+}
+.term-screen.over {
+  outline: 1px dashed var(--cyan);
+  outline-offset: -5px;
+}
+/* The galaxy sits at the left (its own width); the title + tagline are centered
+   over that width. The wrap shrinks to the galaxy, so `text-align:center` only
+   centers the title/tagline, while the galaxy keeps its left-aligned rows. */
+.banner-wrap {
+  display: inline-block;
+  text-align: center;
+  margin: 0.2rem 0 1.2rem;
+}
+/* The nebula banner fills the full content width (it measures this wrapper). */
+.galaxy-wrap {
+  width: 100%;
+  margin: 0.1rem 0 1.1rem;
+  overflow: hidden;
+}
+/* Entry-screen intro: version line + a clickable "ajuda" link. */
+.intro {
+  margin: 0 0 1.1rem;
+  color: var(--dim);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+.intro-ver {
+  color: var(--text);
+}
+.intro-ver::before {
+  content: "❯ ";
+  color: var(--cyan);
+}
+
+/* Help modal: the short how-to guide list. */
+.help-guide {
+  list-style: none;
+  margin: 0 0 0.6rem;
+  padding: 0;
+}
+.help-guide li {
+  color: var(--text);
+  font-size: 0.86rem;
+  padding: 0.2rem 0;
+}
+.help-guide li::before {
+  content: "› ";
+  color: var(--cyan);
+}
+/* The label part ("baixar:", "converter:", …) takes the theme accent. */
+.help-guide .lbl {
+  color: var(--cyan);
+}
+/* ASCII section divider inside the help modal. */
+.help-rule {
+  color: var(--dim);
+  white-space: pre;
+  font-size: 0.8rem;
+  margin: 0.7rem 0 0.45rem;
+  opacity: 0.85;
+}
+/* ── settings window ───────────────────────────────────────── */
+.set-section {
+  margin-bottom: 0.9rem;
+}
+.set-check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.22rem 0;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.86rem;
+}
+.set-check:hover {
+  color: var(--cyan);
+}
+.set-check .set-box {
+  color: var(--cyan);
+  font-family: var(--mono);
+}
+.set-dir {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.set-dir-path {
+  color: var(--dim);
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.set-x {
+  background: none;
+  border: none;
+  color: var(--err);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0 0.2rem;
+}
+.set-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line);
+}
+.set-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text);
+  font-size: 0.82rem;
+}
+.set-upd {
+  margin-top: 0.5rem;
+  color: var(--dim);
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.set-close {
+  margin-top: 0.9rem;
+}
+
+/* "any key closes" hint at the bottom of the help window. */
+.help-dismiss {
+  margin-top: 1rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--line);
+  color: var(--dim);
+  font-size: 0.78rem;
+  text-align: center;
+}
+.banner {
+  margin: 0;
+  white-space: pre;
+  line-height: 1;
+}
+/* Galaxy + title share the theme accent, so both shift with the theme. */
+.banner-art {
+  color: var(--cyan);
+  font-size: 0.6rem;
+  text-align: left;
+}
+.tline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.03rem 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.tline-prefix {
+  flex-shrink: 0;
+  color: var(--dim);
+}
+.tline-echo {
+  color: var(--text);
+}
+.tline-echo .tline-prefix {
+  color: var(--cyan);
+}
+/* matrix is all-green; gray the file path so the real info stands out. */
+:root[data-theme="matrix"] .tline-echo {
+  color: #4f7d5a;
+}
+.tline-info {
+  color: var(--dim);
+}
+.tline-info .tline-prefix {
+  color: var(--peri);
+}
+/* Live ffmpeg/yt-dlp command — emphasized and click-anywhere-to-copy. */
+.tline-cmd {
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--peri);
+  font-size: 0.9em;
+  background: var(--bg-soft);
+  border-left: 2px solid var(--cyan);
+  padding: 0.3rem 0.55rem;
+  margin: 0.25rem 0;
+  cursor: pointer;
+}
+.tline-cmd:hover {
+  background: var(--line);
+}
+.tline-cmd .tline-prefix {
+  color: var(--cyan);
+}
+.cmd-text {
+  flex: 1;
+  word-break: break-all;
+}
+/* Brief green flash when the command line is clicked to copy. */
+.tline-cmd.copied {
+  border-left-color: var(--ok);
+}
+.tline-out {
+  color: var(--text);
+}
+/* /about credit line: "desenvolvido com Claude Code por viwctor" (link). */
+.tline-credit {
+  color: var(--dim);
+}
+.tline-credit .cc {
+  color: #d97757;
+}
+.tline-credit .author {
+  color: #ffffff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+:root[data-theme="cluster"] .tline-credit .author {
+  color: #1b2030;
+}
+.tline-err,
+.tline-err .tline-prefix {
+  color: var(--red);
+}
+
+/* Job log lines */
+.tline-job {
+  gap: 0.55rem;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.95em;
+}
+.job-tag {
+  color: var(--dim);
+  border: 1px solid var(--line);
+  padding: 0 0.3rem;
+  font-size: 0.78em;
+}
+.job-label {
+  color: var(--text);
+  word-break: break-all;
+}
+.job-q {
+  color: var(--dim);
+}
+.job-ok {
+  color: var(--ok);
+}
+.job-err {
+  color: var(--red);
+}
+.job-bar {
+  color: var(--blue);
+  letter-spacing: -1px;
+}
+.job-pct {
+  color: var(--num);
+}
+.job-meta {
+  color: var(--dim);
+  font-size: 0.92em;
+}
+.job-cancel {
+  color: var(--magenta);
+}
+.job-open {
+  cursor: pointer;
+}
+.job-open:hover .job-ok {
+  text-decoration: underline;
+}
+.job-x {
+  background: transparent;
+  border: none;
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 0.95em;
+  cursor: pointer;
+  padding: 0 0.3rem;
+  flex-shrink: 0;
+}
+.job-x:hover {
+  color: var(--red);
+}
+
+/* Hint above the prompt — the clickable "choose a file". */
+/* ASCII-framed hint: the box chars + text must share one font size so the
+   frame lines up, hence the button inherits the size. */
+.hint-box {
+  margin-top: 0.9rem;
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--dim);
+  white-space: pre;
+  line-height: 1.15;
+}
+.hint-choose {
+  background: transparent;
+  border: none;
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+.hint-choose:hover {
+  color: var(--peri);
+}
+
+/* Numbered wizard (shown when presets are untouched). Lines cascade in
+   top-to-bottom (animation-delay set per row), like a terminal printing rows. */
+.wizard {
+  margin-top: 0.9rem;
+}
+.wiz-line {
+  opacity: 0;
+  animation: wiz-in 0.16s ease forwards;
+}
+@keyframes wiz-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.wiz-q {
+  color: var(--cyan);
+  font-size: 0.95em;
+  margin-bottom: 0.35rem;
+}
+.wiz-opt {
+  color: var(--peri);
+  font-size: 0.95em;
+  padding: 0.04rem 0;
+}
+.wiz-num {
+  display: inline-block;
+  min-width: 1.6rem;
+  color: var(--num);
+}
+.wiz-back,
+.wiz-esc {
+  color: var(--dim);
+}
+.wiz-back .wiz-num,
+.wiz-esc .wiz-num {
+  color: var(--dim);
+}
+
+/* "/" command palette (Discord-like). */
+.slash {
+  margin-top: 0.9rem;
+  border-left: 2px solid var(--line);
+}
+.slash-row {
+  display: flex;
+  gap: 0.8rem;
+  align-items: baseline;
+  padding: 0.12rem 0.6rem;
+  cursor: pointer;
+}
+.slash-row:hover {
+  background: var(--bg-soft);
+}
+.slash-name {
+  color: var(--cyan);
+  min-width: 7rem;
+  flex-shrink: 0;
+}
+.slash-desc {
+  color: var(--dim);
+  font-size: 0.92em;
+}
+
+/* ASCII divider between runs. */
+.tline-divider {
+  color: var(--dim);
+  opacity: 0.7;
+  padding: 0.35rem 0;
+  white-space: pre;
+  overflow: hidden;
+  letter-spacing: 0.05em;
+}
+
+/* The prompt itself */
+.term-prompt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+.term-caret {
+  color: var(--cyan);
+  padding-top: 0.15rem;
+}
+.term-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 1.02em;
+  line-height: 1.5;
+  padding: 0.1rem 0;
+}
+
+.cursor {
+  color: var(--cyan);
+  animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── Cluster (light): dark menu bar + dropdowns over a light screen ── */
+:root[data-theme="cluster"] .titlebar,
+:root[data-theme="cluster"] .menubar,
+:root[data-theme="cluster"] .mb-drop {
+  background: #0c1018;
+  border-color: #1b2740;
+}
+:root[data-theme="cluster"] .tb-name {
+  color: #d6dae6;
+}
+:root[data-theme="cluster"] .mb-root,
+:root[data-theme="cluster"] .mb-item,
+:root[data-theme="cluster"] .mb-arrow {
+  color: #d6dae6;
+}
+:root[data-theme="cluster"] .mb-root:hover,
+:root[data-theme="cluster"] .mb-rootli.open > .mb-root {
+  background: #161c2a;
+  color: #8aa0ff;
+}
+
+/* ── Shared form bits (used inside menus + modals) ────────── */
+.field {
+  margin-bottom: 0.9rem;
+}
+.field-label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--dim);
+  margin-bottom: 0.3rem;
+}
+.field-label::before {
+  content: "# ";
+  color: var(--peri);
+}
+.num-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.num {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.num input {
+  width: 5rem;
+  color: var(--num);
+}
+.num input,
+select {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--mono);
+  padding: 0.3rem 0.45rem;
+}
+.num input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
+.chip {
+  background: transparent;
+  border: none;
+  color: var(--peri);
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  padding: 0.15rem 0.3rem;
+  cursor: pointer;
+}
+.chip:hover {
+  color: var(--text);
+}
+.btn-ghost {
+  color: var(--peri);
+  background: transparent;
+  border: 1px solid var(--line);
+  padding: 0.25rem 0.7rem;
+  cursor: pointer;
+  font-family: var(--mono);
+}
+.btn-ghost:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+.hint {
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
+/* ── Modal (terminal window) ─────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  padding: 1rem;
+}
+.modal {
+  width: min(540px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--blue);
+  padding: 1rem 1.2rem;
+}
+.card-title {
+  margin: 0 0 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--text);
+  border-bottom: 1px dashed var(--line);
+  padding-bottom: 0.4rem;
+}
+.card-title::before {
+  content: "ngc7023 ❯ ";
+  color: var(--cyan);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.3rem 1.2rem;
+  font-size: 0.9rem;
+}
+.info-grid dt {
+  color: var(--dim);
+}
+.info-grid dt::before {
+  content: "• ";
+  color: var(--line);
+}
+.info-grid dd {
+  margin: 0;
+}
+.badge-ok {
+  color: var(--ok);
+}
+.badge-off {
+  color: var(--magenta);
+}
+
+.credit {
+  margin-top: 1.4rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed var(--line);
+  color: var(--dim);
+  font-size: 0.82rem;
+  margin-bottom: 0.9rem;
+}
+.credit .cc {
+  color: #d97757;
+}
+.credit .author {
+  color: #ffffff;
+  text-decoration: none;
+  cursor: pointer;
+}
+.credit .author:hover {
+  text-decoration: underline;
+}
+:root[data-theme="cluster"] .credit .author {
+  color: #1b2030;
+}
+
+/* ── Shortcuts modal ──────────────────────────────────────── */
+.sc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sc-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed var(--line);
+}
+.sc-keys {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  min-width: 8.5rem;
+}
+/* keys within one combo stay on a single row; alternative combos stack. */
+.sc-combo {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+.sc-plus {
+  color: var(--dim);
+  margin: 0 0.1rem;
+}
+.sc-label {
+  flex: 1;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+.sc-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.1rem;
+}
+.kbd {
+  display: inline-block;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 0 0.35rem;
+  min-width: 1rem;
+  text-align: center;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+}
+
+/* ── Visual polish (additive — delete this whole block to revert) ──────────
+   A subtle CRT/phosphor feel: a soft boot fade-in, a faint glow on the galaxy
+   banner + the prompt caret, and a gentle highlight on finished job rows. Kept
+   low so text stays crisp; respects prefers-reduced-motion. */
+.term-screen {
+  animation: boot-in 0.5s ease both;
+}
+@keyframes boot-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Phosphor glow on accent-only elements (no body text, so readability holds). */
+.banner-art {
+  text-shadow: 0 0 7px color-mix(in srgb, var(--cyan) 50%, transparent);
+}
+.term-caret,
+.cursor,
+.tline-echo .tline-prefix {
+  text-shadow: 0 0 6px color-mix(in srgb, var(--cyan) 65%, transparent);
+}
+
+/* A finished job row gently highlights on hover before you click to open it. */
+.tline-job.job-open {
+  transition: background 0.12s ease;
+  border-radius: 2px;
+}
+.tline-job.job-open:hover {
+  background: var(--bg-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .term-screen {
+    animation: none;
+  }
+}
