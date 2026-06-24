@@ -2,10 +2,10 @@
 
 <img src="docs/logo.png" width="96" height="96" alt="NGC7023 logo" />
 
-# NGC7023 · Downloader & Converter
+# NGC7023
 
 A local-first desktop app to **download** videos and audio from the web and
-**convert** media, images, PDFs and subtitles entirely on your own machine.
+**convert** media, images, PDFs and subtitles, entirely on your own machine.
 No account, no cloud, no telemetry.
 
 <img src="gifs/output.gif" width="440" alt="NGC7023 terminal" />
@@ -16,15 +16,9 @@ No account, no cloud, no telemetry.
 
 ## Demos
 
-| Download a video | Convert a video to GIF |
-| :---: | :---: |
-| <img src="gifs/gif1.gif" width="340" alt="downloading a video" /> | <img src="gifs/gif2.gif" width="340" alt="converting a video to gif" /> |
-
-<div align="center">
-
-**Themes, fonts & system info**
-
-<img src="gifs/settings.gif" width="380" alt="switching themes and fonts" />
+| Download a video | Convert a video to GIF | Themes, fonts & system info |
+| :---: | :---: | :---: |
+| <img src="gifs/gif1.gif" width="260" alt="downloading a video" /> | <img src="gifs/gif2.gif" width="260" alt="converting a video to gif" /> | <img src="gifs/settings.gif" width="260" alt="themes, fonts and system info" /> |
 
 </div>
 
@@ -78,18 +72,21 @@ heavy lifting is done by bundled command-line tools (**yt-dlp** for downloads an
 
 ## Install
 
-> Packaged installers (Windows `.exe`, Linux AppImage) are published on the
-> [**Releases**](https://github.com/viwctor/ngc7023/releases) page. Download the
-> latest one and run it — FFmpeg and yt-dlp come bundled, nothing else to install.
+Download the latest build from the
+[**Releases**](https://github.com/viwctor/NGC7023/releases/latest) page and run it.
+FFmpeg and yt-dlp come bundled, so there's nothing else to install.
 
-Until a release is available, see [Run from source](#run-from-source) below.
+- **Windows**: the `NGC7023-Setup-*.exe` installer (per-user, no admin needed).
+- **Linux**: the `NGC7023-x86_64.AppImage` (`chmod +x`, then run).
+
+Prefer to build it yourself? See [Run from source](#run-from-source).
 
 ## Run from source
 
-Requirements: **Python 3.12+** and **Node.js 18+**.
+Requirements: **Python 3.11+** and **Node.js 18+**.
 
 ```bash
-# 1. Frontend (run inside ./frontend) — outputs into ../ngc7023/web
+# 1. Frontend (run inside ./frontend): outputs into ../ngc7023/web
 cd frontend
 npm install
 npm run build          # REQUIRED before launching: the app loads ngc7023/web/index.html
@@ -150,10 +147,9 @@ flowchart LR
 
 ## Roadmap
 
-- [ ] Packaged installers for Windows and Linux
+- [x] Packaged installers for Windows and Linux
 - [ ] Auto-update download (not just notification)
 - [ ] More subtitle conveniences
-- [ ] macOS support
 
 ## License
 
