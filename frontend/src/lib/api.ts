@@ -84,6 +84,14 @@ export interface SubtitleJob {
   overwrite: boolean;
 }
 
+/** An embedded subtitle track in a video (from `listSubtitleTracks`). */
+export interface SubtitleTrack {
+  index: number; // absolute stream index, used as -map 0:<index>
+  lang: string;
+  codec: string;
+  text: boolean; // false for image subs (PGS/VobSub) — can't extract to text
+}
+
 export type DownloadKind = "video" | "audio";
 
 export interface DownloadJob {
@@ -120,10 +128,24 @@ export const api = {
   savePastedFile: (name: string, bytes: number[]) =>
     invoke<string>("save_pasted_file", { name, bytes }),
 
+  /** Embedded subtitle tracks of a video (for the extract tool). */
+  listSubtitleTracks: (video: string) =>
+    invoke<SubtitleTrack[]>("list_subtitle_tracks", { video }),
+
   // ── settings / OS integration ──
   setTray: (enabled: boolean) => invoke<void>("set_tray", { enabled }),
   setAutostart: (enabled: boolean) => invoke<void>("set_autostart", { enabled }),
   restartApp: () => invoke<void>("restart_app"),
   checkUpdates: () =>
-    invoke<{ configured: boolean; available: boolean; version?: string; url?: string }>("check_updates"),
+    invoke<{
+      configured: boolean;
+      available: boolean;
+      version?: string;
+      url?: string;
+      assetUrl?: string | null;
+      assetName?: string | null;
+    }>("check_updates"),
+  /** Download the release asset for this OS and launch it (progress via update:* events). */
+  downloadUpdate: (assetUrl: string, assetName: string) =>
+    invoke<void>("download_update", { assetUrl, assetName }),
 };

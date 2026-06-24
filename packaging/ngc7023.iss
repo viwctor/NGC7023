@@ -12,7 +12,7 @@
 ; matching the app's per-user "start with Windows" (HKCU) autostart.
 
 #define MyAppName "NGC7023"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "viwctor"
 #define MyAppURL "https://github.com/viwctor/NGC7023"
 #define MyAppExeName "ngc7023.exe"

@@ -35,6 +35,14 @@ export function runCoverJob(job: CoverVideoJob): Promise<number> {
   return invoke<number>("run_cover_job", { job });
 }
 
+export function runSubtitleExtractJob(video: string, index: number, output: string): Promise<number> {
+  return invoke<number>("run_subtitle_extract_job", { video, index, output });
+}
+
+export function runSubtitleConvertJob(input: string, output: string): Promise<number> {
+  return invoke<number>("run_subtitle_convert_job", { input, output });
+}
+
 export function runImagePdfJob(input: string, output: string): Promise<number> {
   return invoke<number>("run_image_pdf_job", { input, output });
 }
@@ -65,4 +73,13 @@ export function onJobProgress(cb: (e: JobProgressEvent) => void): Promise<Unlist
 
 export function onJobDone(cb: (e: JobDoneEvent) => void): Promise<UnlistenFn> {
   return listen<JobDoneEvent>("job:done", (ev) => cb(ev.payload));
+}
+
+// ── self-update download progress (Settings → check for updates) ────────────
+export function onUpdateProgress(cb: (percent: number) => void): Promise<UnlistenFn> {
+  return listen<{ percent: number }>("update:progress", (ev) => cb(ev.payload.percent));
+}
+
+export function onUpdateDone(cb: (e: { success: boolean; message: string }) => void): Promise<UnlistenFn> {
+  return listen<{ success: boolean; message: string }>("update:done", (ev) => cb(ev.payload));
 }

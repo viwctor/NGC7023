@@ -10,6 +10,7 @@ import { useI18n } from "../lib/i18n";
 import { useSettings } from "../lib/settings";
 import { useStudio } from "../lib/studio";
 import { api } from "../lib/api";
+import { onUpdateProgress, onUpdateDone } from "../lib/jobs";
 import { Modal } from "./Modal";
 
 function shorten(p: string): string {
@@ -17,9 +18,12 @@ function shorten(p: string): string {
 }
 
 interface UpdState {
-  phase: "idle" | "checking" | "done";
+  phase: "idle" | "checking" | "done" | "downloading";
   msg?: string;
-  url?: string;
+  url?: string; // release page (fallback: open in browser)
+  assetUrl?: string | null; // direct installer / AppImage download
+  assetName?: string | null;
+  progress?: number; // download %
 }
 
 export function SettingsModal({ open: isOpen, onClose }: { open: boolean; onClose: () => void }) {
@@ -56,11 +60,43 @@ export function SettingsModal({ open: isOpen, onClose }: { open: boolean; onClos
     try {
       const r = await api.checkUpdates();
       if (!r.configured) setUpd({ phase: "done", msg: t("settings.updateNoRepo") });
-      else if (r.available) setUpd({ phase: "done", msg: `${t("settings.updateAvailable")}: ${r.version ?? ""}`, url: r.url });
+      else if (r.available)
+        setUpd({
+          phase: "done",
+          msg: `${t("settings.updateAvailable")}: ${r.version ?? ""}`,
+          url: r.url,
+          assetUrl: r.assetUrl,
+          assetName: r.assetName,
+        });
       else setUpd({ phase: "done", msg: t("settings.upToDate") });
     } catch {
       setUpd({ phase: "done", msg: t("settings.updateError") });
     }
+  }
+
+  // Download the installer/AppImage (with progress) and launch it. The backend
+  // closes the app afterwards so the installer can replace it.
+  async function doInstall() {
+    if (!upd.assetUrl || !upd.assetName) return;
+    setUpd((u) => ({ ...u, phase: "downloading", progress: 0 }));
+    let offP: (() => void) | null = null;
+    let offD: (() => void) | null = null;
+    const cleanup = () => { offP?.(); offD?.(); };
+    offP = await onUpdateProgress((p) => setUpd((u) => ({ ...u, progress: Math.round(p) })));
+    offD = await onUpdateDone((e) => {
+      cleanup();
+      setUpd((u) => ({
+        ...u,
+        phase: "done",
+        progress: undefined,
+        assetUrl: e.success ? null : u.assetUrl,
+        msg: e.success ? t("settings.updateRestart") : t("settings.updateFailed"),
+      }));
+    });
+    api.downloadUpdate(upd.assetUrl, upd.assetName).catch(() => {
+      cleanup();
+      setUpd((u) => ({ ...u, phase: "done", msg: t("settings.updateFailed") }));
+    });
   }
 
   function doReset() {
@@ -106,8 +142,17 @@ export function SettingsModal({ open: isOpen, onClose }: { open: boolean; onClos
 
       {upd.phase !== "idle" && (
         <div className="set-upd">
-          {upd.phase === "checking" ? t("settings.checking") : upd.msg}
-          {upd.url && (
+          {upd.phase === "checking"
+            ? t("settings.checking")
+            : upd.phase === "downloading"
+              ? `${t("settings.downloading")} ${upd.progress ?? 0}%`
+              : upd.msg}
+          {upd.phase === "done" && upd.assetUrl && (
+            <button className="btn-ghost chip" onClick={() => void doInstall()}>
+              {t("settings.installUpdate")}
+            </button>
+          )}
+          {upd.phase === "done" && !upd.assetUrl && upd.url && (
             <button className="btn-ghost chip" onClick={() => openUrl(upd.url!).catch(() => {})}>
               {t("settings.download")}
             </button>

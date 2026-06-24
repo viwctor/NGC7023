@@ -104,6 +104,16 @@ const DICT = {
     en: "attach subtitles to a video",
     es: "adjunta subtítulos a un vídeo",
   },
+  "cmd.subextract": {
+    pt: "extrai a legenda embutida de um vídeo",
+    en: "extract an embedded subtitle from a video",
+    es: "extrae el subtítulo incrustado de un vídeo",
+  },
+  "cmd.subconvert": {
+    pt: "converte legenda entre srt / vtt / ass",
+    en: "convert a subtitle between srt / vtt / ass",
+    es: "convierte un subtítulo entre srt / vtt / ass",
+  },
   "sub.askVideo": { pt: "anexe o vídeo", en: "attach the video", es: "adjunta el vídeo" },
   "sub.askFile": {
     pt: "agora anexe o arquivo de legenda",
@@ -126,6 +136,24 @@ const DICT = {
     pt: "burn-in (legenda dentro do vídeo)",
     en: "burn-in (subtitle inside the video)",
     es: "burn-in (subtítulo dentro del vídeo)",
+  },
+  "sub.fmtQ": { pt: "salvar em qual formato?", en: "save to which format?", es: "¿guardar en qué formato?" },
+  "subx.askVideo": {
+    pt: "anexe o vídeo com legendas embutidas",
+    en: "attach the video with embedded subtitles",
+    es: "adjunta el vídeo con subtítulos incrustados",
+  },
+  "subx.scanning": { pt: "procurando faixas de legenda…", en: "scanning for subtitle tracks…", es: "buscando pistas de subtítulos…" },
+  "subx.none": {
+    pt: "nenhuma legenda de texto embutida encontrada",
+    en: "no embedded text subtitles found",
+    es: "no se encontraron subtítulos de texto incrustados",
+  },
+  "subx.pickTrack": { pt: "qual faixa extrair?", en: "which track to extract?", es: "¿qué pista extraer?" },
+  "subc.askFile": {
+    pt: "anexe o arquivo de legenda para converter",
+    en: "attach the subtitle file to convert",
+    es: "adjunta el archivo de subtítulos a convertir",
   },
   "cmd.exit": { pt: "fecha o programa", en: "close the app", es: "cierra el programa" },
   "cmd.formatSet": {
@@ -404,6 +432,10 @@ const DICT = {
   "settings.download": { pt: "baixar", en: "download", es: "descargar" },
   "settings.updateError": { pt: "não foi possível verificar", en: "couldn't check", es: "no se pudo verificar" },
   "settings.updateNoRepo": { pt: "repositório ainda não configurado", en: "repository not configured yet", es: "repositorio aún no configurado" },
+  "settings.installUpdate": { pt: "baixar e instalar", en: "download & install", es: "descargar e instalar" },
+  "settings.downloading": { pt: "baixando…", en: "downloading…", es: "descargando…" },
+  "settings.updateRestart": { pt: "instalando, o app vai reabrir…", en: "installing, the app will reopen…", es: "instalando, la app se reabrirá…" },
+  "settings.updateFailed": { pt: "falha ao atualizar", en: "update failed", es: "error al actualizar" },
   "settings.reset": { pt: "resetar aplicativo", en: "reset the app", es: "restablecer la app" },
   "settings.resetConfirm": {
     pt: "resetar tudo ao padrão e reiniciar?",

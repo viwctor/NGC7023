@@ -163,6 +163,24 @@ class Api:
             hw_accel=HwAccel(hw) if hw else None,
         )
 
+    # ── subtitle conveniences (v1.1) ───────────────────────────────────────
+    def list_subtitle_tracks(self, params: dict | None = None) -> list[dict]:
+        """Embedded subtitle tracks of a video, so the UI can offer to extract one."""
+        video = str((params or {}).get("video") or "")
+        return self._engine.list_subtitle_tracks(video) if video else []
+
+    def run_subtitle_extract_job(self, params: dict | None = None) -> int:
+        p = params or {}
+        return self._engine.start_subtitle_extract_job(
+            str(p.get("video", "")), int(p.get("index", 0)), str(p.get("output", ""))
+        )
+
+    def run_subtitle_convert_job(self, params: dict | None = None) -> int:
+        p = params or {}
+        return self._engine.start_subtitle_convert_job(
+            str(p.get("input", "")), str(p.get("output", ""))
+        )
+
     def run_cover_job(self, params: dict | None = None) -> int:
         job = CoverVideoJob.from_dict((params or {}).get("job") or {})
         return self._engine.start_cover_job(job)
@@ -376,14 +394,88 @@ class Api:
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
             tag = str(data.get("tag_name", "")).lstrip("vV")
+            asset = _platform_asset(data.get("assets") or [])
             return {
                 "configured": True,
                 "available": _version_gt(tag, APP_VERSION),
                 "version": tag,
                 "url": data.get("html_url", ""),
+                "assetUrl": asset.get("browser_download_url") if asset else None,
+                "assetName": asset.get("name") if asset else None,
             }
         except Exception:
             return {"configured": True, "available": False, "error": True}
+
+    def download_update(self, params: dict | None = None) -> None:
+        """Download this platform's release asset (emitting ``update:progress``)
+        then launch it: on Windows run the installer; on Linux replace the running
+        AppImage in place and relaunch. The frontend passes the asset URL/name
+        from a prior ``check_updates``."""
+        p = params or {}
+        url = str(p.get("assetUrl") or "")
+        name = str(p.get("assetName") or "ngc7023-update")
+        if not url:
+            self.emit("update:done", {"success": False, "message": "no asset for this platform"})
+            return
+        threading.Thread(target=self._download_update, args=(url, name), daemon=True).start()
+
+    def _download_update(self, url: str, name: str) -> None:
+        out_dir = Path(tempfile.gettempdir()) / "ngc7023-update"
+        try:
+            out_dir.mkdir(parents=True, exist_ok=True)
+            dest = out_dir / os.path.basename(name)
+            req = urllib.request.Request(url, headers={"User-Agent": "ngc7023"})
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                total = int(resp.headers.get("Content-Length") or 0)
+                done = 0
+                with open(dest, "wb") as fh:
+                    while True:
+                        chunk = resp.read(262144)
+                        if not chunk:
+                            break
+                        fh.write(chunk)
+                        done += len(chunk)
+                        if total:
+                            self.emit("update:progress", {"percent": min(100.0, done / total * 100.0)})
+        except Exception as e:
+            self.emit("update:done", {"success": False, "message": f"download failed: {e}"})
+            return
+        self.emit("update:progress", {"percent": 100.0})
+        self._launch_update(str(dest))
+
+    def _launch_update(self, path: str) -> None:
+        import shutil
+
+        try:
+            if sys.platform == "win32":
+                # Run the installer, then close this app so it can overwrite the exe.
+                subprocess.Popen([path], creationflags=_CREATE_NO_WINDOW)
+                self.emit("update:done", {"success": True, "message": "installing"})
+                threading.Timer(0.8, self._close_for_update).start()
+            elif sys.platform.startswith("linux") and os.environ.get("APPIMAGE"):
+                appimage = os.environ["APPIMAGE"]
+                shutil.move(path, appimage)  # replace the running AppImage in place
+                os.chmod(appimage, 0o755)
+                subprocess.Popen([appimage])
+                self.emit("update:done", {"success": True, "message": "updated"})
+                threading.Timer(0.8, self._close_for_update).start()
+            else:
+                # Dev / non-AppImage: just reveal the download for the user.
+                _reveal_in_os(path)
+                self.emit("update:done", {"success": True, "message": "downloaded"})
+        except Exception as e:
+            self.emit("update:done", {"success": False, "message": f"launch failed: {e}"})
+
+    def _close_for_update(self) -> None:
+        try:
+            if self._tray is not None:
+                self._tray.stop()
+        except Exception:
+            pass
+        try:
+            self._window.destroy()
+        except Exception:
+            pass
 
 
 # ── OS helpers ──────────────────────────────────────────────────────────────
@@ -438,6 +530,21 @@ def _version_gt(a: str, b: str) -> bool:
         return out
 
     return parts(a) > parts(b)
+
+
+def _platform_asset(assets: list[dict]) -> Optional[dict]:
+    """The release asset for this OS: the Windows ``.exe`` or the Linux
+    ``.AppImage`` (``None`` if the release has no matching file)."""
+    if sys.platform == "win32":
+        exts = (".exe",)
+    elif sys.platform.startswith("linux"):
+        exts = (".appimage",)
+    else:
+        exts = (".dmg",)
+    for a in assets:
+        if str(a.get("name", "")).lower().endswith(exts):
+            return a
+    return None
 
 
 

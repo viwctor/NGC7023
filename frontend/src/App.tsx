@@ -199,7 +199,7 @@ function App() {
 
   // Job lines live in the scrollback in the order they happened, updated in
   // place — so a download's progress stays put and later actions print below it.
-  const { runMedia, runDownload, runCover, runSub, runPdf, runImages, runMerge, runPdfToImg, runPdfPages, cancel, cancelAll } = useJobs({
+  const { runMedia, runDownload, runCover, runSub, runSubExtract, runSubConvert, runPdf, runImages, runMerge, runPdfToImg, runPdfPages, cancel, cancelAll } = useJobs({
     onNew: (uid, label, tag, out) => {
       jobMeta.current.set(uid, { label, tag });
       lastDir.current = tag === "download" ? out : dirOf(out);
@@ -850,12 +850,66 @@ function App() {
     });
   }
 
+  // /subextract: pull an embedded subtitle track out of a video into a file.
+  async function subExtractSlash() {
+    log(t("subx.askVideo"), "info");
+    const video = await pickFile(["mkv", "mp4", "mov", "webm", "avi", "m4v", "ts"]);
+    if (!video) return;
+    log(video, "echo");
+    log(t("subx.scanning"), "info");
+    const tracks = (await api.listSubtitleTracks(video).catch(() => [])).filter((tr) => tr.text);
+    if (!tracks.length) {
+      log(t("subx.none"), "err");
+      return;
+    }
+    const fmts = ["srt", "vtt", "ass"];
+    setWizard({
+      title: t("subx.pickTrack"),
+      options: tracks.map((tr) => `${tr.lang || "und"} · ${tr.codec}`),
+      back: false,
+      onPick: (i) =>
+        setWizard({
+          title: t("sub.fmtQ"),
+          options: fmts,
+          back: false,
+          onPick: (j) => {
+            setWizard(null);
+            if (lines.length) divider();
+            const output = outputPath(video, fmts[j], s.cvDest);
+            runSubExtract(video, tracks[i].index, output, basename(output));
+          },
+        }),
+    });
+  }
+
+  // /subconvert: convert a subtitle file between srt / vtt / ass.
+  async function subConvertSlash() {
+    log(t("subc.askFile"), "info");
+    const input = await pickFile(["srt", "vtt", "ass", "ssa", "sub"]);
+    if (!input) return;
+    log(input, "echo");
+    const fmts = ["srt", "vtt", "ass"];
+    setWizard({
+      title: t("sub.fmtQ"),
+      options: fmts,
+      back: false,
+      onPick: (j) => {
+        setWizard(null);
+        if (lines.length) divider();
+        const output = outputPath(input, fmts[j], s.cvDest);
+        runSubConvert(input, output, basename(output));
+      },
+    });
+  }
+
   // Dispatch table for the slash commands (english canonical + pt aliases).
   // Appearance/gpu/codec/about/reset moved to the menu + settings window.
   const settingsCommands: Record<string, (arg: string) => void> = {
     dest: () => void cmdDest(), destino: () => void cmdDest(),
     video: videoSlash, "vídeo": videoSlash,
     sub: subSlash, leg: subSlash,
+    subextract: subExtractSlash, legextrair: subExtractSlash,
+    subconvert: subConvertSlash, legconverter: subConvertSlash,
   };
 
   // Pre-flight a link with yt-dlp so an unsupported/unavailable URL is reported

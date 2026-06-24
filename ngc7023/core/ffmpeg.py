@@ -8,6 +8,7 @@ unit-testable without ever launching FFmpeg.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Optional
@@ -341,6 +342,49 @@ class SubtitleJob:
         if "." not in self.output:
             return ""
         return self.output.rsplit(".", 1)[-1].lower()
+
+
+# ── subtitle extract / convert (v1.1 conveniences) ──────────────────────────
+# Matches e.g. "Stream #0:2(eng): Subtitle: subrip (default)" in `ffmpeg -i`.
+_SUB_STREAM_RE = re.compile(r"Stream #0:(\d+)(?:\[[^\]]*\])?(?:\((\w+)\))?: Subtitle: (\w+)")
+
+# Text subtitle codecs we can transcode to srt/vtt/ass. Image subs (PGS, VobSub)
+# can't become text, so the UI marks them text=False and hides them from extract.
+TEXT_SUB_CODECS = frozenset(
+    {"subrip", "srt", "ass", "ssa", "webvtt", "vtt", "mov_text", "text", "stl"}
+)
+
+
+def parse_subtitle_streams(ffmpeg_stderr: str) -> list[dict]:
+    """Subtitle tracks found in ``ffmpeg -i <video>`` stderr, in file order:
+    ``[{"index": 2, "lang": "eng", "codec": "subrip", "text": True}]``. ``index``
+    is the absolute stream index (used as ``-map 0:<index>``)."""
+    tracks: list[dict] = []
+    for m in _SUB_STREAM_RE.finditer(ffmpeg_stderr):
+        codec = m.group(3)
+        tracks.append(
+            {
+                "index": int(m.group(1)),
+                "lang": m.group(2) or "",
+                "codec": codec,
+                "text": codec in TEXT_SUB_CODECS,
+            }
+        )
+    return tracks
+
+
+def build_subtitle_extract_args(
+    video: str, stream_index: int, output: str, overwrite: bool = True
+) -> list[str]:
+    """Extract one embedded subtitle track to a standalone file. FFmpeg picks the
+    encoder from the output extension (``.srt`` → subrip, ``.vtt`` → webvtt, …)."""
+    return [("-y" if overwrite else "-n"), "-i", video, "-map", f"0:{stream_index}", output]
+
+
+def build_subtitle_convert_args(input_path: str, output: str, overwrite: bool = True) -> list[str]:
+    """Convert a standalone subtitle file between formats (srt / vtt / ass). The
+    target format is implied by the output extension."""
+    return [("-y" if overwrite else "-n"), "-i", input_path, output]
 
 
 def _resolve_encoder(base_codec: Optional[str], hw: Optional[HwAccel]) -> Optional[str]:

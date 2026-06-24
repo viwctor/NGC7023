@@ -80,6 +80,42 @@ class JobEngine:
     def start_cover_job(self, job) -> int:
         return self._spawn_thread(self._run_cover, job)
 
+    # ── subtitle conveniences (v1.1): extract embedded / convert format ──────
+    def list_subtitle_tracks(self, video: str) -> list[dict]:
+        """Subtitle tracks embedded in ``video`` (synchronous probe via ffmpeg)."""
+        from ..core.ffmpeg import parse_subtitle_streams
+
+        try:
+            result = subprocess.run(
+                [self._resolve("ffmpeg"), "-hide_banner", "-i", video],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=30.0,
+                creationflags=_CREATE_NO_WINDOW,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return []
+        return parse_subtitle_streams(result.stderr or "")
+
+    def start_subtitle_extract_job(self, video: str, stream_index: int, output: str) -> int:
+        from ..core.ffmpeg import build_subtitle_extract_args
+
+        args = build_subtitle_extract_args(video, stream_index, output)
+        return self._spawn_thread(lambda jid, _j: self._run_subtitle_op(jid, args), None)
+
+    def start_subtitle_convert_job(self, input_path: str, output: str) -> int:
+        from ..core.ffmpeg import build_subtitle_convert_args
+
+        args = build_subtitle_convert_args(input_path, output)
+        return self._spawn_thread(lambda jid, _j: self._run_subtitle_op(jid, args), None)
+
+    def _run_subtitle_op(self, job_id: int, args: list[str]) -> None:
+        # Extract/convert are quick; there's no duration to measure progress
+        # against, so the bar simply jumps to done on success.
+        self._run_ffmpeg(job_id, [*_FFMPEG_PROGRESS_FLAGS, *args], 0.0)
+
     # ── PDF jobs (run a pure-Python op on a thread, then report done/error) ──
     def start_image_pdf_job(self, input_path: str, output: str) -> int:
         from . import pdf_ops

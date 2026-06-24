@@ -19,6 +19,8 @@ import {
   runPdfImagesJob,
   runPdfPagesJob,
   runSubtitleJob,
+  runSubtitleExtractJob,
+  runSubtitleConvertJob,
 } from "./jobs";
 
 const MAX_CONCURRENT = 3;
@@ -45,6 +47,8 @@ type PendingItem =
   | { uid: number; kind: "download"; job: DownloadJob }
   | { uid: number; kind: "cover"; job: CoverVideoJob }
   | { uid: number; kind: "subtitle"; job: SubtitleJob }
+  | { uid: number; kind: "subextract"; video: string; index: number; output: string }
+  | { uid: number; kind: "subconvert"; input: string; output: string }
   | { uid: number; kind: "pdf"; input: string; output: string }
   | { uid: number; kind: "pdfimages"; inputs: string[]; output: string }
   | { uid: number; kind: "pdfmerge"; inputs: string[]; output: string }
@@ -72,7 +76,11 @@ export function useJobs(cb: JobCallbacks) {
             ? runCoverJob(item.job)
             : item.kind === "subtitle"
               ? runSubtitleJob(item.job)
-              : item.kind === "pdf"
+              : item.kind === "subextract"
+                ? runSubtitleExtractJob(item.video, item.index, item.output)
+                : item.kind === "subconvert"
+                  ? runSubtitleConvertJob(item.input, item.output)
+                  : item.kind === "pdf"
               ? runImagePdfJob(item.input, item.output)
               : item.kind === "pdfimages"
                 ? runImagesPdfJob(item.inputs, item.output)
@@ -130,6 +138,8 @@ export function useJobs(cb: JobCallbacks) {
       | { kind: "download"; job: DownloadJob }
       | { kind: "cover"; job: CoverVideoJob }
       | { kind: "subtitle"; job: SubtitleJob }
+      | { kind: "subextract"; video: string; index: number; output: string }
+      | { kind: "subconvert"; input: string; output: string }
       | { kind: "pdf"; input: string; output: string }
       | { kind: "pdfimages"; inputs: string[]; output: string }
       | { kind: "pdfmerge"; inputs: string[]; output: string }
@@ -149,6 +159,10 @@ export function useJobs(cb: JobCallbacks) {
   const runDownload = (job: DownloadJob, label: string) => enqueue({ kind: "download", job }, label, "download", job.outputDir);
   const runCover = (job: CoverVideoJob, label: string) => enqueue({ kind: "cover", job }, label, "youtube", job.output);
   const runSub = (job: SubtitleJob, label: string) => enqueue({ kind: "subtitle", job }, label, "convert", job.output);
+  const runSubExtract = (video: string, index: number, output: string, label: string) =>
+    enqueue({ kind: "subextract", video, index, output }, label, "convert", output);
+  const runSubConvert = (input: string, output: string, label: string) =>
+    enqueue({ kind: "subconvert", input, output }, label, "convert", output);
   const runPdf = (input: string, output: string, label: string) => enqueue({ kind: "pdf", input, output }, label, "pdf", output);
   const runImages = (inputs: string[], output: string, label: string) => enqueue({ kind: "pdfimages", inputs, output }, label, "pdf", output);
   const runMerge = (inputs: string[], output: string, label: string) => enqueue({ kind: "pdfmerge", inputs, output }, label, "pdf", output);
@@ -176,5 +190,5 @@ export function useJobs(cb: JobCallbacks) {
     uidToId.current.forEach((backendId) => cancelJob(backendId).catch(() => {}));
   }
 
-  return { runMedia, runDownload, runCover, runSub, runPdf, runImages, runMerge, runPdfToImg, runPdfPages, cancel, cancelAll };
+  return { runMedia, runDownload, runCover, runSub, runSubExtract, runSubConvert, runPdf, runImages, runMerge, runPdfToImg, runPdfPages, cancel, cancelAll };
 }

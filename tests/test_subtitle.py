@@ -1,6 +1,12 @@
-"""Subtitle builder: soft embed vs burn-in."""
+"""Subtitle builder: soft embed vs burn-in, plus the v1.1 extract/convert tools."""
 
-from ngc7023.core.ffmpeg import HwAccel, SubtitleJob
+from ngc7023.core.ffmpeg import (
+    HwAccel,
+    SubtitleJob,
+    build_subtitle_convert_args,
+    build_subtitle_extract_args,
+    parse_subtitle_streams,
+)
 
 
 def test_soft_embed_mp4_uses_mov_text():
@@ -63,3 +69,40 @@ def test_soft_embed_ignores_codec_and_gpu():
     args = job.build_args()
     assert "-c:v" not in args
     assert args[args.index("-c") + 1] == "copy"
+
+
+# ── v1.1: extract embedded subtitles / convert subtitle formats ─────────────
+
+_FFMPEG_STDERR = """
+  Duration: 00:21:00.00, start: 0.000000, bitrate: 1500 kb/s
+  Stream #0:0(eng): Video: h264 (High), yuv420p, 1920x1080
+  Stream #0:1(eng): Audio: aac, 48000 Hz, stereo
+  Stream #0:2(eng): Subtitle: subrip (default)
+  Stream #0:3(por): Subtitle: ass
+  Stream #0:4: Subtitle: hdmv_pgs_subtitle
+"""
+
+
+def test_parse_subtitle_streams_finds_tracks_and_marks_image_subs():
+    tracks = parse_subtitle_streams(_FFMPEG_STDERR)
+    assert [t["index"] for t in tracks] == [2, 3, 4]
+    assert tracks[0] == {"index": 2, "lang": "eng", "codec": "subrip", "text": True}
+    assert tracks[1]["lang"] == "por" and tracks[1]["codec"] == "ass" and tracks[1]["text"]
+    # image-based subs (PGS) can't become text → text=False so the UI can hide them
+    assert tracks[2]["index"] == 4 and tracks[2]["text"] is False
+
+
+def test_parse_subtitle_streams_empty_when_none():
+    assert parse_subtitle_streams("Stream #0:0: Video: h264\n") == []
+
+
+def test_build_subtitle_extract_maps_absolute_stream_index():
+    args = build_subtitle_extract_args("movie.mkv", 2, "out.srt")
+    assert args == ["-y", "-i", "movie.mkv", "-map", "0:2", "out.srt"]
+    # FFmpeg infers the encoder from the .srt extension (no explicit -c:s).
+    assert "-c:s" not in args
+
+
+def test_build_subtitle_convert_is_input_to_output():
+    assert build_subtitle_convert_args("a.srt", "b.vtt") == ["-y", "-i", "a.srt", "b.vtt"]
+    assert build_subtitle_convert_args("a.srt", "b.vtt", overwrite=False)[0] == "-n"
