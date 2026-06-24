@@ -1,7 +1,7 @@
 [project]
 name = "ngc7023"
 version = "0.1.0"
-description = "Local-first downloader (yt-dlp) + media/PDF converter (FFmpeg). Python rewrite of the Tauri app."
+description = "Local-first downloader (yt-dlp) + media/PDF converter (FFmpeg)."
 requires-python = ">=3.11"
 dependencies = [
     "pywebview>=5.3",   # native webview shell (WebView2 on Windows, webkit2gtk on Linux)
@@ -15,6 +15,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "pyinstaller>=6.10",   # Windows/Linux freezing (see packaging/)
 ]
 
 [build-system]

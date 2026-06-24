@@ -1,7 +1,7 @@
 """Application entry point: creates the pywebview window and starts the GUI.
 
 Run with ``python -m ngc7023`` (see ``__main__.py``). The window is frameless to
-match the custom terminal titlebar (the old Tauri `decorations: false`), sized
+match the custom terminal titlebar (no native window decorations), sized
 like the original app. The React build lives in ``ngc7023/web`` and is loaded
 from disk — there is no dev server in production.
 """
@@ -10,14 +10,15 @@ from __future__ import annotations
 
 import os
 import sys
-from pathlib import Path
 
 import webview
 from webview.dom import DOMEventHandler
 
+from . import bin as binmod
 from .api import Api
+from .jobs import updater
 
-WINDOW_TITLE = "ngc7023"
+WINDOW_TITLE = "NGC7023"
 BG_COLOR = "#04060a"  # matches the terminal --bg so there's no white flash
 
 
@@ -26,7 +27,7 @@ def _web_index() -> str:
     dev_url = os.environ.get("NGC_DEV_URL")
     if dev_url:
         return dev_url
-    index = Path(__file__).resolve().parent / "web" / "index.html"
+    index = binmod.resource_path("web", "index.html")
     if not index.exists():
         raise SystemExit(
             "Frontend not built. Run `npm install && npm run build` in ./frontend "
@@ -61,6 +62,8 @@ def _setup_dnd(window, api: Api) -> None:
 
 def main() -> None:
     api = Api()
+    # Keep yt-dlp current (writable app-data copy + throttled self-update).
+    updater.init()
     # Launched by autostart with --tray: start hidden, living in the tray.
     minimized = "--tray" in sys.argv or "--minimized" in sys.argv
     window = webview.create_window(
@@ -92,7 +95,15 @@ def main() -> None:
     window.events.loaded += on_loaded
 
     debug = bool(os.environ.get("NGC_DEBUG"))
-    webview.start(debug=debug)
+    # pywebview defaults to private_mode=True (ephemeral) — that wiped the app's
+    # localStorage every launch (the language picker kept reappearing, themes/
+    # prefs reset). Persist to a stable per-user folder instead.
+    storage = binmod.data_dir() / "webview"
+    try:
+        storage.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
+    webview.start(debug=debug, private_mode=False, storage_path=str(storage))
 
 
 if __name__ == "__main__":

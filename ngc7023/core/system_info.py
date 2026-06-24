@@ -1,6 +1,6 @@
 """Read-only host introspection for the Settings screen (OS, CPU, RAM, GPU).
 
-Ported from the old Tauri `core/system_info.rs`. OS/CPU/RAM come from stdlib +
+OS/CPU/RAM come from stdlib +
 ``psutil``; GPU names are pulled per-OS since there is no portable, dependency-
 light way to enumerate adapters by name. Every query is best-effort: failures
 yield empty/"unknown" rather than raising.

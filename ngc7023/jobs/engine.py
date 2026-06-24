@@ -1,6 +1,6 @@
 """Spawns ffmpeg / yt-dlp for a job and streams progress via the event bus.
 
-Ported from the old Tauri `jobs/run.rs`. One job runs per thread: it emits
+One job runs per thread: it emits
 ``job:progress`` events while running (with optional speed/ETA for downloads) and
 a ``job:done`` event at the end. Running children are tracked so a cancel can kill
 them; a cancelled job reports ``cancelled`` instead of ``error``.
@@ -119,9 +119,65 @@ class JobEngine:
 
     # ── job runners ────────────────────────────────────────────────────────
     def _run_media(self, job_id: int, job) -> None:
+        # GIF runs as two passes (palette -> encode): the single-pass split filter
+        # buffers every frame and never reports progress until the very end.
+        if getattr(job, "is_gif", None) and job.is_gif():
+            self._run_gif(job_id, job)
+            return
         duration = self._probe_duration(job.input) or 0.0
         args = [*_FFMPEG_PROGRESS_FLAGS, *job.build_args()]
         self._run_ffmpeg(job_id, args, duration)
+
+    def _run_gif(self, job_id: int, job) -> None:
+        """Two-pass GIF: pass 1 writes an optimal palette to a temp PNG (low
+        memory, streams the input once); pass 2 applies it with paletteuse, which
+        streams frame-by-frame so progress advances normally."""
+        duration = self._probe_duration(job.input) or 0.0
+        workdir = tempfile.mkdtemp(prefix="ngc7023-gif-")
+        palette = os.path.join(workdir, "palette.png")
+        try:
+            ok, tail = self._run_palettegen(
+                job_id, ["-hide_banner", *job.build_gif_palettegen_args(palette)]
+            )
+            if not ok or not os.path.exists(palette):
+                cancelled = self._unregister(job_id)
+                if cancelled:
+                    self._emit_done(job_id, False, True, "cancelled")
+                else:
+                    self._emit_done(job_id, False, False,
+                                    f"ffmpeg palette pass failed. {tail}".strip())
+                return
+            # Pass 2 registers itself, streams progress, and emits job:done.
+            args = [*_FFMPEG_PROGRESS_FLAGS, *job.build_gif_encode_args(palette)]
+            self._run_ffmpeg(job_id, args, duration)
+        finally:
+            shutil.rmtree(workdir, ignore_errors=True)
+
+    def _run_palettegen(self, job_id: int, args: list[str]) -> tuple[bool, str]:
+        """Runs the palette pass as a tracked child (so a cancel can kill it) and
+        returns (succeeded, stderr_tail). Emits no events — the caller decides."""
+        try:
+            proc = subprocess.Popen(
+                [self._resolve("ffmpeg"), *args],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,  # palettegen output is the PNG file
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                creationflags=_CREATE_NO_WINDOW,
+            )
+        except OSError as e:
+            return False, f"failed to start ffmpeg: {e}"
+        self._register(job_id, proc)
+        tail: list[str] = []
+        if proc.stderr is not None:
+            for line in proc.stderr:
+                tail.append(line.rstrip("\n"))
+                if len(tail) > _STDERR_TAIL:
+                    tail.pop(0)
+        proc.wait()
+        return proc.returncode == 0, "\n".join(tail)
 
     def _run_cover(self, job_id: int, job) -> None:
         # Progress is measured against the audio length (the image loops to it).

@@ -1,4 +1,4 @@
-"""Mirrors the Rust unit tests in core/ytdlp.rs to prove port parity."""
+"""Unit tests for the yt-dlp argument builder (DownloadJob)."""
 
 from ngc7023.core.ytdlp import DownloadJob, DownloadKind
 

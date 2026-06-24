@@ -5,8 +5,8 @@ import { fileURLToPath, URL } from "node:url";
 // Resolve a path relative to this config file (ESM-safe, cross-platform).
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
-// The frontend keeps its original Tauri imports untouched; these aliases
-// redirect them to thin pywebview-backed compat shims. This isolates the entire
+// The frontend imports the `@tauri-apps/*` API surface; these aliases redirect
+// those imports to thin pywebview-backed compat shims. This isolates the entire
 // platform layer in one place (the layering rule) — UI components never change.
 const tauriShims = {
   "@tauri-apps/api/core": r("./src/shims/tauri/core.ts"),

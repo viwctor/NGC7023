@@ -1,5 +1,5 @@
 // Frontend side of the job engine: start a real conversion and subscribe to the
-// progress/done events the Rust backend emits.
+// progress/done events the backend emits.
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";

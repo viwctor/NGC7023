@@ -1,4 +1,4 @@
-"""Mirrors the Rust unit test in core/capability.rs for hw-family parsing."""
+"""Unit tests for hardware-encoder family detection."""
 
 from ngc7023.core.capability import detect_hw_families, order_by_gpu
 

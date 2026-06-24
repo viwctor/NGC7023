@@ -1,0 +1,10 @@
+#!/bin/bash
+# AppImage entry point for NGC7023.
+#
+# The PyInstaller one-dir build lives in usr/bin (the ngc7023 binary + its
+# _internal/ folder). PyInstaller's bootloader resolves the bundled Python libs,
+# the webkit helper processes are RPATH-patched at build time to find
+# libwebkit2gtk in _internal/, and rthook-webkit.py sets WEBKIT_EXEC_PATH. So
+# there's nothing to set up here — just exec the frozen binary.
+HERE="$(dirname "$(readlink -f "${0}")")"
+exec "${HERE}/usr/bin/ngc7023" "$@"

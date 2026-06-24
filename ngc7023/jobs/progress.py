@@ -1,6 +1,6 @@
 """Pure parsers for tool progress output.
 
-Ported 1:1 from the old Tauri `jobs/progress.rs`. Kept separate from the
+Kept separate from the
 spawning code so they can be unit-tested without launching anything.
 """
 

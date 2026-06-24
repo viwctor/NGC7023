@@ -1,6 +1,6 @@
 """Probes the host for the tools and hardware encoders NGC7023 can use.
 
-Ported from the old Tauri `core/capability.rs`. We shell out to the bundled (or
+We shell out to the bundled (or
 system) ffmpeg / yt-dlp. The results drive the UI: e.g. only offer "AMD (AMF)"
 if FFmpeg actually reports an ``*_amf`` encoder on this machine.
 """

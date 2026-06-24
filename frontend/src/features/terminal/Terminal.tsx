@@ -309,7 +309,7 @@ export function Terminal({
         className="intro"
         style={boot ? { animation: "boot-in 0.5s ease both", animationDelay: "1.5s" } : undefined}
       >
-        <div className="intro-ver">ngc7023 v{APP_VERSION}</div>
+        <div className="intro-ver">NGC7023 v{APP_VERSION}</div>
         <div className="intro-line">
           {t("intro.pre")}{" "}
           <button type="button" className="hint-choose" onClick={onHelp}>

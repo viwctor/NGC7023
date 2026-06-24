@@ -153,10 +153,10 @@ function outputPath(input: string, format: string, dest: string | null): string 
   const base = norm.slice(slash + 1).replace(/\.[^.]+$/, "");
   if (dest) {
     const d = dest.replace(/\\/g, "/").replace(/\/+$/, "");
-    return `${d}/${base}.ngc.${format}`;
+    return `${d}/${base} (ngc).${format}`;
   }
   const dir = slash >= 0 ? norm.slice(0, slash + 1) : "";
-  return `${dir}${base}.ngc.${format}`;
+  return `${dir}${base} (ngc).${format}`;
 }
 
 function App() {
@@ -210,7 +210,7 @@ function App() {
       // A finished job (success/error, not cancelled) notifies the OS.
       if (patch.progress === null && patch.error !== undefined && !patch.cancelled) {
         const meta = jobMeta.current.get(uid);
-        if (meta) notify("ngc7023", `${basename(meta.label)} — ${t(patch.error ? "notify.failed" : "notify.done")}`);
+        if (meta) notify("NGC7023", `${basename(meta.label)} — ${t(patch.error ? "notify.failed" : "notify.done")}`);
         jobMeta.current.delete(uid);
       }
     },
@@ -284,7 +284,9 @@ function App() {
       format,
       maxHeight: kind === "video" ? q : null,
       audioQuality: kind === "audio" ? q : null,
-      outputTemplate: null,
+      // Mark downloads with a "(ngc)" suffix, like converted files. Literal text
+      // in the template (yt-dlp only expands %(field)s), parens are filename-safe.
+      outputTemplate: "%(title)s (ngc).%(ext)s",
       embedThumbnail: true,
       embedMetadata: true,
     };
@@ -1018,16 +1020,16 @@ function App() {
   // Build the destination for a combined "N images → 1 pdf".
   function imagesPdfOut(first: string): string {
     const dir = (s.cvDest ?? dirOf(first)).replace(/\\/g, "/").replace(/\/+$/, "");
-    return `${dir}/imagens.ngc.pdf`;
+    return `${dir}/imagens (ngc).pdf`;
   }
 
-  // "C:\\a\\doc.pdf" → "C:/a/doc.ngc" (the per-page images become doc.ngc-1.png, …).
+  // "C:\\a\\doc.pdf" → "C:/a/doc (ngc)" (the per-page images become "doc (ngc)-1.png", …).
   function outStem(input: string): string {
     const norm = input.replace(/\\/g, "/");
     const slash = norm.lastIndexOf("/");
     const base = norm.slice(slash + 1).replace(/\.[^.]+$/, "");
     const dir = s.cvDest ? s.cvDest.replace(/\\/g, "/").replace(/\/+$/, "") : slash >= 0 ? norm.slice(0, slash) : ".";
-    return `${dir}/${base}.ngc`;
+    return `${dir}/${base} (ngc)`;
   }
 
   // Turn one-or-more images into a PDF (1 image = 1 page, many = many pages).
@@ -1070,7 +1072,7 @@ function App() {
         if (lines.length) divider();
         log(`${t("pdf.merge")} (${list.length})`, "echo");
         const dir = (s.cvDest ?? dirOf(list[0])).replace(/\\/g, "/").replace(/\/+$/, "");
-        const out = `${dir}/merged.ngc.pdf`;
+        const out = `${dir}/merged (ngc).pdf`;
         runMerge(list, out, basename(out));
         return;
       }
@@ -1149,6 +1151,14 @@ function App() {
     api.setAutostart(settings.autostart).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // "remover animações" → a CSS hook on <html> that neutralizes every CSS
+  // animation/transition (the JS nebula + typewriter are gated separately).
+  useEffect(() => {
+    const root = document.documentElement;
+    if (settings.reduceMotion) root.dataset.reduceMotion = "1";
+    else delete root.dataset.reduceMotion;
+  }, [settings.reduceMotion]);
 
   // Ask once for OS notification permission (used when a job finishes).
   useEffect(() => {

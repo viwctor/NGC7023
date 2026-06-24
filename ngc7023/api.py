@@ -1,6 +1,6 @@
 """The pywebview bridge: the thin object exposed to the React frontend.
 
-This is the Python equivalent of the old Tauri `commands.rs` — a deliberately
+This is a deliberately
 thin layer. All real logic lives in :mod:`ngc7023.core` and the job engine
 (:mod:`ngc7023.jobs`); these methods only unpack the params dict and delegate. An
 exception raised here is delivered to the frontend by pywebview as a rejected
@@ -285,10 +285,8 @@ class Api:
             return True
         try:
             import pystray
-            from PIL import Image
 
-            icon_path = Path(__file__).resolve().parent / "web" / "branding" / "icon.png"
-            image = Image.open(str(icon_path))
+            image = _tray_icon_image()
 
             def _open(icon, item) -> None:
                 try:
@@ -310,7 +308,7 @@ class Api:
                 pystray.MenuItem("abrir", _open, default=True),
                 pystray.MenuItem("sair", _quit),
             )
-            self._tray = pystray.Icon("ngc7023", image, "ngc7023", menu)
+            self._tray = pystray.Icon("ngc7023", image, "NGC7023", menu)
             threading.Thread(target=self._tray.run, daemon=True).start()
             return True
         except Exception:
@@ -398,6 +396,36 @@ def _autostart_command() -> str:
     if os.path.exists(pyw):
         exe = pyw
     return f'"{exe}" -m ngc7023 --tray'
+
+
+def _tray_icon_image():
+    """Tray icon = the arrow chevron (``branding/tray.png``), kept distinct from
+    the app/window icon so the tray glyph stays the arrow even though the app
+    icon is the nebula. Falls back to a drawn chevron if the asset is missing."""
+    from PIL import Image
+
+    try:
+        path = binmod.resource_path("web", "branding", "tray.png")
+        return Image.open(str(path)).convert("RGBA").resize((64, 64), Image.LANCZOS)
+    except Exception:
+        return _drawn_chevron()
+
+
+def _drawn_chevron():
+    """Fallback tray glyph: a cyan ``❯`` chevron on transparent."""
+    from PIL import Image, ImageDraw
+
+    s = 64
+    img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    cyan = (106, 215, 255, 255)
+    w = 9
+    pts = [(23, 15), (47, 32), (23, 49)]
+    d.line(pts, fill=cyan, width=w, joint="curve")
+    for (cx, cy) in pts:  # round the caps/joins
+        r = w / 2
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=cyan)
+    return img
 
 
 def _version_gt(a: str, b: str) -> bool:

@@ -192,11 +192,6 @@ body {
   height: 100%;
   flex: 1;
 }
-.tb-icon {
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
-}
 .tb-name {
   color: var(--dim);
   font-size: 0.78rem;
@@ -967,7 +962,7 @@ select:focus {
   padding-bottom: 0.4rem;
 }
 .card-title::before {
-  content: "ngc7023 ❯ ";
+  content: "NGC7023 ❯ ";
   color: var(--cyan);
 }
 
@@ -1111,4 +1106,145 @@ select:focus {
   .term-screen {
     animation: none;
   }
+}
+
+/* ── Visual refresh (additive; delete this whole block to revert) ──────────
+   A cohesive depth pass over the flat terminal: a fixed nebula-tinted backdrop,
+   layered menus + modals, a slim themed scrollbar, and soft accent glows. It's
+   all driven by the theme accent variables, so every theme gets it for free
+   (including the animated rgb hue and the light cluster theme). */
+
+/* Deep-space backdrop: faint accent glows at the top and bottom-right over the
+   base --bg. The body doesn't scroll (the terminal does), so this reads as a
+   fixed nebula behind the scrollback. Low-alpha so body text stays crisp. */
+body {
+  background:
+    radial-gradient(135% 90% at 50% -15%, color-mix(in srgb, var(--blue) 10%, transparent), transparent 55%),
+    radial-gradient(120% 80% at 110% 115%, color-mix(in srgb, var(--peri) 9%, transparent), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+/* Theme-aware text selection (was a hardcoded near-black). */
+::selection {
+  background: var(--blue);
+  color: var(--bg);
+}
+
+/* Slim, theme-tinted scrollbars (WebView2 is Chromium). */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--blue) 26%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--cyan) 45%, transparent);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* The menu bar reads as a layer floating above the scrollback. */
+.menubar {
+  box-shadow: 0 6px 18px -14px #000;
+}
+.titlebar,
+.menubar,
+.mb-root,
+.mb-item,
+.tb-btn,
+.btn-ghost,
+.chip,
+.set-check,
+.slash-row {
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease, box-shadow 0.1s ease;
+}
+
+/* Dropdowns: a richer shadow + a quick "printed" entrance. */
+.mb-drop {
+  box-shadow: 0 16px 36px -14px #000, 0 0 0 1px color-mix(in srgb, var(--line) 55%, transparent);
+  animation: mb-in 0.12s ease;
+}
+@keyframes mb-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Inputs: a soft accent ring on focus, on top of the border-color change. */
+.num input:focus,
+select:focus,
+.mb-num:focus,
+.mb-tc:focus {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--blue) 45%, transparent);
+}
+
+/* Modals float as terminal windows: frosted backdrop + accent border & glow. */
+.modal-overlay {
+  background: rgba(2, 4, 10, 0.62);
+  backdrop-filter: blur(4px);
+}
+.modal {
+  border-color: color-mix(in srgb, var(--blue) 65%, var(--line));
+  box-shadow:
+    0 28px 80px -24px #000,
+    0 0 46px -16px color-mix(in srgb, var(--blue) 38%, transparent);
+  animation: modal-in 0.16s ease;
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Progress bar: a soft glow on the filled run (keeps the ASCII blocks). */
+.job-bar {
+  text-shadow: 0 0 7px color-mix(in srgb, var(--blue) 45%, transparent);
+}
+
+/* Keycaps + job tags get a faint fill for a touch of depth. */
+.kbd {
+  background: var(--bg-soft);
+}
+.job-tag {
+  background: color-mix(in srgb, var(--line) 35%, transparent);
+}
+
+/* Command palette: accent the active edge and the hovered row. */
+.slash {
+  border-left-color: color-mix(in srgb, var(--cyan) 45%, var(--line));
+}
+.slash-row:hover {
+  background: var(--bg-soft);
+  box-shadow: inset 2px 0 0 var(--cyan);
+}
+
+/* Drag-over: a faint accent wash in addition to the dashed outline. */
+.term-screen.over {
+  background: color-mix(in srgb, var(--cyan) 6%, transparent);
+}
+
+/* New entrance animations bow out under OS reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  .mb-drop,
+  .modal {
+    animation: none;
+  }
+}
+
+/* The "remover animações" setting (data-reduce-motion on <html>) is the global
+   off-switch: it neutralizes every CSS animation/transition too, not just the
+   JS-driven nebula + typewriter. */
+:root[data-reduce-motion="1"] *,
+:root[data-reduce-motion="1"] *::before,
+:root[data-reduce-motion="1"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
 }

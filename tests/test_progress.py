@@ -1,4 +1,4 @@
-"""Mirrors the Rust unit tests in jobs/progress.rs."""
+"""Unit tests for the tool progress-line parsers."""
 
 from ngc7023.jobs.progress import (
     hms_to_secs,

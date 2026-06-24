@@ -1,5 +1,4 @@
-// Typed wrappers around the Rust commands. These types mirror the structs in
-// `src-tauri/src/core` — keep them in sync. The UI fills these objects; it
+// Typed wrappers around the Python Api methods. The UI fills these objects; it
 // never builds an ffmpeg/yt-dlp command string by hand.
 
 import { invoke } from "@tauri-apps/api/core";

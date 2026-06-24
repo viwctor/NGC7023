@@ -1,12 +1,11 @@
 """PDF / image-to-PDF operations (the side-effecting half of the PDF tool).
 
-Ported from the old Tauri ``jobs/run.rs`` PDF paths, but using Python libraries
-instead of hand-writing PDF bytes:
+These use Python libraries instead of hand-writing PDF bytes:
 
 - image(s) -> PDF via Pillow (pages sized to the image at 72 dpi),
 - merge / page-edit via :mod:`pypdf`,
 - PDF -> images via :mod:`pypdfium2` (which bundles its own ``pdfium`` binary, so
-  no external renderer needs to ship — this mirrors the Rust version's pdfium).
+  no external renderer needs to ship).
 
 These do real IO, so — like the rest of :mod:`ngc7023.jobs` — they live outside
 ``core``. Each raises ``PdfError`` with a user-facing message on failure; the job
@@ -131,8 +130,7 @@ def pdf_to_images(
 ) -> list[str]:
     """Render each PDF page to ``{stem}-{n}.{image_format}``; returns the paths.
 
-    ~200 dpi (72pt * 2.78) keeps pages sharp with little size penalty — the same
-    factor the Rust version used.
+    ~200 dpi (72pt * 2.78) keeps pages sharp with little size penalty.
     """
     import pypdfium2 as pdfium
 

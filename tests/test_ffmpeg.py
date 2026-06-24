@@ -1,4 +1,4 @@
-"""Mirrors the Rust unit tests in core/ffmpeg.rs to prove port parity."""
+"""Unit tests for the FFmpeg argument builder (MediaJob)."""
 
 from ngc7023.core.ffmpeg import Crop, HwAccel, MediaJob, Trim, _atempo_chain
 
@@ -28,16 +28,18 @@ def test_amd_hardware_encoder_is_selected():
     assert args[idx + 1] == "hevc_amf"
 
 
-def test_hardware_encoder_omits_crf_but_software_keeps_it():
+def test_hardware_encoder_uses_cqp_not_crf():
     base = dict(input="in.mkv", output="out.mp4", video_codec="h264", crf=23)
     # Software: -crf is passed, no -hwaccel.
     sw = MediaJob(**base).build_args()
     assert "-crf" in sw
     assert "-hwaccel" not in sw  # software decode needs no hwaccel
-    # Hardware (amf): -crf dropped (the encoder rejects it) and GPU decode on.
+    # Hardware (amf): -crf dropped (the encoder rejects it), constant-QP instead
+    # (without it AMF defaults to a huge bitrate), and GPU decode on.
     hw = MediaJob(**base, hw_accel=HwAccel.AMF).build_args()
     assert "h264_amf" in hw
-    assert "-crf" not in hw  # hardware encode must not pass crf
+    assert "-crf" not in hw
+    assert "cqp" in hw and hw[hw.index("-qp_i") + 1] == "23"
     assert hw[hw.index("-hwaccel") + 1] == "auto"
 
 
@@ -78,7 +80,7 @@ def test_vp9_gets_bv0_for_true_crf():
     assert args[args.index("-b:v") + 1] == "0"
 
 
-def test_gif_output_drops_codec_crf_and_audio():
+def test_gif_uses_palette_filtercomplex():
     job = MediaJob(
         input="in.mp4",
         output="out.gif",
@@ -92,8 +94,36 @@ def test_gif_output_drops_codec_crf_and_audio():
     assert "-crf" not in args
     assert "-c:a" not in args
     assert "-an" in args
-    assert "fps=15" in args[args.index("-vf") + 1]
+    assert "-vf" not in args  # GIF goes through filter_complex (palette) now
+    fc = args[args.index("-filter_complex") + 1]
+    assert "palettegen" in fc and "paletteuse" in fc
+    assert "fps=15" in fc
+    assert args[args.index("-map") + 1] == "[v]"
     assert args[-1] == "out.gif"
+
+
+def test_gif_two_pass_builders():
+    """The engine runs GIF as two passes (palette -> encode) to avoid the
+    single-pass split's frame buffering / stalled progress."""
+    job = MediaJob(input="in.mp4", output="out.gif", fps=15.0, scale_height=480)
+    assert job.is_gif()
+
+    # Pass 1: palettegen writes to the temp PNG; same editing filters; -vf form.
+    p1 = job.build_gif_palettegen_args("pal.png")
+    assert p1[-1] == "pal.png"
+    vf = p1[p1.index("-vf") + 1]
+    assert vf.endswith("palettegen=stats_mode=diff")
+    assert "scale=-2:480" in vf and "fps=15" in vf
+    assert "paletteuse" not in vf
+
+    # Pass 2: two inputs (video + palette), paletteuse, maps the labeled stream.
+    p2 = job.build_gif_encode_args("pal.png")
+    assert p2.count("-i") == 2 and "pal.png" in p2
+    fc = p2[p2.index("-filter_complex") + 1]
+    assert "paletteuse" in fc and "palettegen" not in fc
+    assert "[1:v]" in fc  # the palette input feeds paletteuse
+    assert p2[p2.index("-map") + 1] == "[v]"
+    assert "-an" in p2 and p2[-1] == "out.gif"
 
 
 def test_from_dict_maps_camelcase_bridge_payload():

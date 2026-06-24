@@ -1,4 +1,4 @@
-"""Cover -> video builder (still image + audio). Mirrors the Rust cover.rs tests."""
+"""Cover -> video builder (still image + audio)."""
 
 from ngc7023.core.cover import CoverLayout, CoverVideoJob
 

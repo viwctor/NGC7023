@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=NGC7023
+GenericName=Media downloader & converter
+Comment=Local-first downloader (yt-dlp) and media/PDF converter (FFmpeg)
+Exec=ngc7023
+Icon=ngc7023
+Categories=AudioVideo;
+Terminal=false
+StartupWMClass=NGC7023
+Keywords=download;youtube;ffmpeg;convert;video;audio;pdf;yt-dlp;

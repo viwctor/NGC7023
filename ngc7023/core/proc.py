@@ -1,6 +1,6 @@
 """Small subprocess helper shared by the host probes.
 
-Mirrors the old Tauri `core/proc.rs`. Its main job beyond running a command is to
+Its main job beyond running a command is to
 **never pop a console window** on Windows (the app is a GUI), and to never raise:
 a failed probe returns ``None`` so the UI degrades gracefully instead of crashing.
 """

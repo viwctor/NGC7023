@@ -41,6 +41,7 @@ def test_burnin_uses_hardware_encoder():
     )
     args = job.build_args()
     assert args[args.index("-c:v") + 1] == "h264_amf"
+    assert "cqp" in args  # quality must be capped or the file balloons (the 6 GB bug)
 
 
 def test_burnin_hevc_gets_hvc1_tag_in_mp4():

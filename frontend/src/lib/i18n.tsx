@@ -1,6 +1,6 @@
 // Minimal, dependency-free i18n. House rule: ALL user-facing text is lowercase,
-// even titles and acronyms (the brand is "ngc7023"). Language persists to
-// localStorage and is changed from the menu (arquivo › preferências › idiomas).
+// the one exception being the brand name, shown uppercase as "NGC7023". Language
+// persists to localStorage and is changed from the menu (arquivo › preferências › idiomas).
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 

@@ -14,8 +14,8 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Redirect the old Tauri imports to the pywebview compat shims (mirrors the
-       Vite aliases so `tsc` resolves them too). */
+    /* Redirect the `@tauri-apps/*` imports to the pywebview compat shims
+       (mirrors the Vite aliases so `tsc` resolves them too). */
     "baseUrl": ".",
     "paths": {
       "@tauri-apps/api/core": ["./src/shims/tauri/core.ts"],

@@ -8,26 +8,25 @@ A local-first desktop app to **download** videos and audio from the web and
 **convert** media, images, PDFs and subtitles — entirely on your own machine.
 No account, no cloud, no telemetry.
 
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-2b6cb0)](#install)
-[![Python](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-d97757)](https://claude.com/claude-code)
+<img src="gifs/output.gif" width="440" alt="NGC7023 terminal" />
 
 </div>
 
 ---
 
-<!--
-  Screenshots: capture a few PNGs/GIFs of the terminal in action, drop them into
-  docs/ (e.g. docs/downloader.png, docs/converter.png, docs/pdf.png) and
-  uncomment the block below.
+## Demos
 
-## Screenshots
+| Download a video | Convert a video to GIF |
+| :---: | :---: |
+| <img src="gifs/gif1.gif" width="340" alt="downloading a video" /> | <img src="gifs/gif2.gif" width="340" alt="converting a video to gif" /> |
 
-| Download | Convert | PDF & subtitles |
-| :---: | :---: | :---: |
-| ![Downloader](docs/downloader.png) | ![Converter](docs/converter.png) | ![PDF](docs/pdf.png) |
--->
+<div align="center">
+
+**Themes, fonts & system info**
+
+<img src="gifs/settings.gif" width="380" alt="switching themes and fonts" />
+
+</div>
 
 ## Overview
 
@@ -35,9 +34,6 @@ NGC7023 is a desktop application with a **terminal-style interface**: you paste 
 link or drop a file, answer a few numbered questions, and it runs the job. All the
 heavy lifting is done by bundled command-line tools — **yt-dlp** for downloads and
 **FFmpeg** for media — orchestrated locally. Nothing is uploaded anywhere.
-
-It is a Python rewrite of an earlier Tauri/Rust app, keeping the same interface and
-visual identity.
 
 ## Features
 
@@ -104,7 +100,7 @@ python -m venv .venv
 .venv\Scripts\activate         # Windows  (use: source .venv/bin/activate on Linux)
 pip install -e .
 
-# 3. Sidecar binaries (not in git): drop ffmpeg, ffprobe and yt-dlp
+# 3. Sidecar binaries (not in git): drop ffmpeg and yt-dlp
 #    (plain names, .exe on Windows) into ./binaries/
 
 # 4. Launch

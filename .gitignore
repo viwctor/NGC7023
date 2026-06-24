@@ -22,3 +22,8 @@ frontend/dist/
 
 # Run logs
 *.log
+
+# Local icon working files (PNG/SVG masters — the build only needs the assets
+# already in frontend/public/branding/ and packaging/)
+finalicon/
+packaging/icon-concepts/

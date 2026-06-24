@@ -6,7 +6,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { LANG_LABELS, LANGS, useI18n } from "../lib/i18n";
 import { FONT_SIZES, THEMES, useTheme } from "../lib/theme";
 import { useStudio } from "../lib/studio";
-import { tip } from "../lib/tips";
 
 // Base video codecs (the concrete encoder is derived from this + the GPU choice
 // in the builder; all three are encodable in software on any machine).
@@ -79,14 +78,13 @@ export function MenuBar(actions: MenuActions) {
                 <Radio
                   key={g}
                   selected={s.gpu === g}
-                  title={g !== "auto" && g !== "off" ? tip(lang, g) : undefined}
                   onClick={() => { s.set({ gpu: g }); log(`${t("menu.gpu")} = ${gpuLabel(g)}`); }}
                 >
                   {gpuLabel(g)}
                 </Radio>
               ))}
             </Sub>
-            <Sub label={t("menu.video")} title={tip(lang, "codec")}>
+            <Sub label={t("menu.video")}>
               {VIDEO_CODECS.map((c) => (
                 <Radio key={c.id} selected={s.cvCodec === c.id} onClick={() => { s.set({ cvCodec: c.id }); log(`${t("menu.codec")} = ${c.label}`); }}>
                   {c.label}
@@ -166,7 +164,7 @@ function Root({
   );
 }
 
-function Sub({ label, title, children }: { label: string; title?: string; children: React.ReactNode }) {
+function Sub({ label, children }: { label: string; children: React.ReactNode }) {
   const liRef = useRef<HTMLLIElement>(null);
   const nestedRef = useRef<HTMLUListElement>(null);
   const [flip, setFlip] = useState(false);
@@ -182,7 +180,7 @@ function Sub({ label, title, children }: { label: string; title?: string; childr
 
   return (
     <li className="mb-subli" ref={liRef} onMouseEnter={() => requestAnimationFrame(measure)}>
-      <span className="mb-item mb-has" title={title}>
+      <span className="mb-item mb-has">
         <span>{label}</span>
         <span className="mb-arrow">▸</span>
       </span>
@@ -204,16 +202,14 @@ function Item({ onClick, children }: { onClick: () => void; children: React.Reac
 function Radio({
   selected,
   onClick,
-  title,
   children,
 }: {
   selected: boolean;
   onClick: () => void;
-  title?: string;
   children: React.ReactNode;
 }) {
   return (
-    <li className={`mb-item mb-radio ${selected ? "on" : ""}`} onClick={onClick} title={title}>
+    <li className={`mb-item mb-radio ${selected ? "on" : ""}`} onClick={onClick}>
       <span className="mb-mark">{selected ? "▸" : " "}</span>
       {children}
     </li>

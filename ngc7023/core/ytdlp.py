@@ -1,6 +1,6 @@
 """Translates a download request into ``yt-dlp`` arguments.
 
-Ported 1:1 from the old Tauri `core/ytdlp.rs`. We lean on yt-dlp for the
+We lean on yt-dlp for the
 site-specific extraction logic (YouTube, X/Twitter, Facebook, Instagram, TikTok,
 Reddit, ...). Our job is only to express the user's intent — format, quality,
 audio-vs-video — as flags, and let yt-dlp + FFmpeg do the heavy lifting.

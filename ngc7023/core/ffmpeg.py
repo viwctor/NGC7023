@@ -1,6 +1,6 @@
 """Translates a structured media-conversion request into FFmpeg arguments.
 
-Ported 1:1 from the old Tauri `core/ffmpeg.rs`. The UI never builds a command
+The UI never builds a command
 string: it fills a :class:`MediaJob` and this module produces the exact argv.
 Every interactive button maps to a typed field here, and the mapping is
 unit-testable without ever launching FFmpeg.
@@ -66,6 +66,9 @@ class Crop:
 # from the extension, so we skip the codec/CRF and grab one frame.
 _STILL_IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif", "avif"}
 
+# Default quality (CRF/QP) for subtitle burn-in re-encodes.
+_BURN_CRF = 23
+
 
 @dataclass
 class MediaJob:
@@ -125,13 +128,19 @@ class MediaJob:
 
         if self.audio_only:
             args.append("-vn")
+        elif gif:
+            # GIF: a single-pass palettegen/paletteuse (via split) gives far
+            # better color + dithering than ffmpeg's default quantizer, in ONE
+            # process (no leftover palette file). filter_complex disables auto
+            # stream-select, so the labeled output is mapped explicitly.
+            args += self._gif_filter_complex()
         else:
             vf = self._video_filters()
             if vf:
                 args += ["-vf", ",".join(vf)]
-            # GIF / still images carry no explicit codec/CRF — forcing e.g.
-            # `-c:v h264` makes the mux fail (that broke "mp4 -> gif/png").
-            if not gif and not still:
+            # A still image carries no codec/CRF — forcing `-c:v h264` would break
+            # the mux. Real video gets the codec + rate control.
+            if not still:
                 codec = self._resolved_video_codec()
                 if codec is not None:
                     args += ["-c:v", codec]
@@ -139,14 +148,7 @@ class MediaJob:
                     # (the default hev1 tag won't play in some apps).
                     if self.video_codec == "hevc" and self._output_ext() in ("mp4", "mov"):
                         args += ["-tag:v", "hvc1"]
-                    # libvpx-vp9 needs `-b:v 0` to treat -crf as true constant
-                    # quality (otherwise a tiny default bitrate caps quality).
-                    if self.video_codec == "vp9" and self.crf is not None:
-                        args += ["-b:v", "0"]
-                # CRF is an x264/x265/vp9 concept. Hardware encoders reject it —
-                # only pass it for software encoding.
-                if self.crf is not None and not self._uses_hardware_encoder():
-                    args += ["-crf", str(self.crf)]
+                    args += _quality_args(self.video_codec, self.hw_accel, self.crf)
             if still:
                 args += ["-frames:v", "1"]
 
@@ -191,6 +193,60 @@ class MediaJob:
             vf.append(f"setpts={1.0 / self.speed:.6f}*PTS")
         return vf
 
+    def _gif_filter_complex(self) -> list[str]:
+        """High-quality GIF in one pass: the editing filters, then a split into a
+        palettegen branch and a paletteuse branch (no temp palette file).
+
+        Used only for the argv *preview*. The single-pass split must buffer every
+        frame of the paletteuse branch until palettegen has consumed the whole
+        input, which both stalls progress at 0% and blows up memory on real-length
+        videos — so the job engine runs the two-pass builders below instead."""
+        pre = ",".join(self._video_filters())
+        chain = f"{pre}," if pre else ""
+        fc = (
+            f"[0:v]{chain}split[s0][s1];"
+            f"[s0]palettegen=stats_mode=diff[p];"
+            f"[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle[v]"
+        )
+        return ["-filter_complex", fc, "-map", "[v]"]
+
+    def _gif_input_args(self) -> list[str]:
+        """The overwrite + trim + input options shared by both GIF passes. Trim is
+        applied as INPUT options (-ss/-t before -i) so the palette and the encode
+        see exactly the same frames."""
+        args: list[str] = ["-y" if self.overwrite else "-n"]
+        if self.trim is not None:
+            args += [
+                "-ss", _format_secs(self.trim.start_sec),
+                "-t", _format_secs(max(self.trim.end_sec - self.trim.start_sec, 0.0)),
+            ]
+        args += ["-i", self.input]
+        return args
+
+    def build_gif_palettegen_args(self, palette_path: str) -> list[str]:
+        """Pass 1: generate an optimal palette to ``palette_path`` (a temp PNG).
+        Streams the input once with low memory; the engine discards the file."""
+        chain = ",".join(self._video_filters())
+        vf = f"{chain},palettegen=stats_mode=diff" if chain else "palettegen=stats_mode=diff"
+        # -y here is for the temp palette regardless of the job's overwrite flag.
+        args = self._gif_input_args()
+        args[0] = "-y"
+        return [*args, "-vf", vf, palette_path]
+
+    def build_gif_encode_args(self, palette_path: str) -> list[str]:
+        """Pass 2: apply the palette with paletteuse. With the palette ready up
+        front, this streams frame-by-frame — real progress, no buffering."""
+        chain = ",".join(self._video_filters())
+        if chain:
+            fc = (
+                f"[0:v]{chain}[x];"
+                f"[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle[v]"
+            )
+        else:
+            fc = "[0:v][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle[v]"
+        return [*self._gif_input_args(), "-i", palette_path,
+                "-filter_complex", fc, "-map", "[v]", "-an", self.output]
+
     def _audio_filters(self) -> list[str]:
         if self.speed is not None and self.speed > 0.0 and abs(self.speed - 1.0) > 1e-9:
             return _atempo_chain(self.speed)
@@ -204,6 +260,10 @@ class MediaJob:
 
     def _is_gif(self) -> bool:
         return self._output_ext() == "gif"
+
+    def is_gif(self) -> bool:
+        """Public: the job engine runs GIF output as a two-pass palette job."""
+        return self._is_gif()
 
     def _is_still_image(self) -> bool:
         return self._output_ext() in _STILL_IMAGE_EXTS
@@ -264,6 +324,9 @@ class SubtitleJob:
                 args += ["-c:v", encoder]
                 if self.video_codec == "hevc" and self._output_ext() in ("mp4", "mov"):
                     args += ["-tag:v", "hvc1"]
+            # Without rate control the re-encode bloats hugely (esp. on hardware
+            # encoders — that produced a 6 GB file). Cap quality at a sane CRF/QP.
+            args += _quality_args(self.video_codec, self.hw_accel, _BURN_CRF)
             args += ["-c:a", "copy"]
         else:
             args += [
@@ -289,6 +352,36 @@ def _resolve_encoder(base_codec: Optional[str], hw: Optional[HwAccel]) -> Option
     if hw is not None and hw != HwAccel.NONE:
         return hw.encoder_for(base_codec) or base_codec
     return base_codec
+
+
+def _quality_args(base_codec: Optional[str], hw: Optional[HwAccel], crf: Optional[int]) -> list[str]:
+    """Rate-control flags for the resolved encoder.
+
+    Software encoders take ``-crf``. Hardware encoders REJECT ``-crf`` and, left
+    unconstrained, default to an enormous bitrate (a 250 MB clip ballooned to
+    6+ GB) — so the CRF is mapped to each vendor's constant-quantizer mode. A
+    hardware encode always gets a quality cap (defaulting to 23) for this reason.
+    """
+    software = hw is None or hw == HwAccel.NONE
+    if software:
+        if crf is None:
+            return []
+        # libvpx-vp9 needs `-b:v 0` for -crf to act as true constant quality.
+        prefix = ["-b:v", "0"] if base_codec == "vp9" else []
+        return prefix + ["-crf", str(crf)]
+
+    q = str(crf if crf is not None else 23)
+    if hw == HwAccel.AMF:  # AMD (Windows) — h264/hevc/av1_amf all accept these
+        return ["-rc", "cqp", "-qp_i", q, "-qp_p", q, "-qp_b", q]
+    if hw == HwAccel.NVENC:
+        return ["-rc", "constqp", "-qp", q]
+    if hw == HwAccel.QSV:
+        return ["-global_quality", q]
+    if hw == HwAccel.VAAPI:
+        return ["-rc_mode", "CQP", "-qp", q]
+    if hw == HwAccel.VIDEO_TOOLBOX:  # 1..100 scale, higher = better
+        return ["-q:v", str(max(1, min(100, 100 - (crf if crf is not None else 23) * 2)))]
+    return []
 
 
 def _soft_sub_codec(ext: str) -> str:

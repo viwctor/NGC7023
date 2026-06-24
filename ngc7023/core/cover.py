@@ -1,6 +1,6 @@
 """Builds the FFmpeg arguments for the "cover → video" tool.
 
-Ported 1:1 from the old Tauri ``core/cover.rs``. The workflow: turn a still
+The workflow: turn a still
 album cover + an audio file into a video ready for upload (e.g. old Brazilian
 music on YouTube). Designed around that use case:
 
