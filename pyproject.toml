@@ -1,6 +1,6 @@
 [project]
 name = "ngc7023"
-version = "0.1.0"
+version = "1.0.0"
 description = "Local-first downloader (yt-dlp) + media/PDF converter (FFmpeg)."
 requires-python = ">=3.11"
 dependencies = [

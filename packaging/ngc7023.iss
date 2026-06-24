@@ -12,9 +12,9 @@
 ; matching the app's per-user "start with Windows" (HKCU) autostart.
 
 #define MyAppName "NGC7023"
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "1.0.0"
 #define MyAppPublisher "viwctor"
-#define MyAppURL "https://github.com/viwctor/ngc7023"
+#define MyAppURL "https://github.com/viwctor/NGC7023"
 #define MyAppExeName "ngc7023.exe"
 
 [Setup]
@@ -31,7 +31,9 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir=..\dist\installer
 OutputBaseFilename=NGC7023-Setup-{#MyAppVersion}
-SetupIconFile=ngc7023.ico
+; The installer uses the ROUND icon; the app exe (and so the uninstall entry)
+; embeds the SQUARE icon from the spec.
+SetupIconFile=ngc7023-installer.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2
 SolidCompression=yes
