@@ -5,7 +5,7 @@
 # NGC7023 · Downloader & Converter
 
 A local-first desktop app to **download** videos and audio from the web and
-**convert** media, images, PDFs and subtitles — entirely on your own machine.
+**convert** media, images, PDFs and subtitles entirely on your own machine.
 No account, no cloud, no telemetry.
 
 <img src="gifs/output.gif" width="440" alt="NGC7023 terminal" />
@@ -32,8 +32,8 @@ No account, no cloud, no telemetry.
 
 NGC7023 is a desktop application with a **terminal-style interface**: you paste a
 link or drop a file, answer a few numbered questions, and it runs the job. All the
-heavy lifting is done by bundled command-line tools — **yt-dlp** for downloads and
-**FFmpeg** for media — orchestrated locally. Nothing is uploaded anywhere.
+heavy lifting is done by bundled command-line tools (**yt-dlp** for downloads and
+**FFmpeg** for media) orchestrated locally. Nothing is uploaded anywhere.
 
 ## Features
 
@@ -49,8 +49,8 @@ heavy lifting is done by bundled command-line tools — **yt-dlp** for downloads
 - Convert between mp4, mkv, mov, webm, gif, mp3, opus, flac and more.
 - **Detailed editing** per file: resolution, frame rate, crop, trim and playback
   speed (slow-motion included).
-- **Hardware-accelerated encoding** detected per GPU vendor — AMD (AMF / VAAPI),
-  NVIDIA (NVENC), Intel (QSV) — with a software fallback.
+- **Hardware-accelerated encoding** detected per GPU vendor with a software fallback: AMD (AMF / VAAPI),
+  NVIDIA (NVENC), Intel (QSV).
 
 ### PDF tools
 - Image(s) → PDF (one page per image, sized to the image).
@@ -70,7 +70,7 @@ heavy lifting is done by bundled command-line tools — **yt-dlp** for downloads
   loudness normalization).
 
 ### Quality-of-life
-- Three languages — **Portuguese, English, Spanish** — with automatic detection.
+- Three languages with automatic detection: **Portuguese, English, Spanish**.
 - Themes and adjustable font size.
 - System-tray support and optional start-with-Windows.
 - Built-in update check against GitHub releases.
