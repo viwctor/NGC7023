@@ -454,8 +454,12 @@ class Api:
                 threading.Timer(0.8, self._close_for_update).start()
             elif sys.platform.startswith("linux") and os.environ.get("APPIMAGE"):
                 appimage = os.environ["APPIMAGE"]
-                shutil.move(path, appimage)  # replace the running AppImage in place
-                os.chmod(appimage, 0o755)
+                # Stage beside the target, then swap atomically (os.replace) so the
+                # running, FUSE-mounted AppImage file isn't corrupted mid-write.
+                staged = appimage + ".new"
+                shutil.move(path, staged)
+                os.chmod(staged, 0o755)
+                os.replace(staged, appimage)
                 subprocess.Popen([appimage])
                 self.emit("update:done", {"success": True, "message": "updated"})
                 threading.Timer(0.8, self._close_for_update).start()
