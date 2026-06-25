@@ -76,8 +76,8 @@ Download the latest build from the
 [**Releases**](https://github.com/viwctor/NGC7023/releases/latest) page and run it.
 FFmpeg and yt-dlp come bundled, so there's nothing else to install.
 
-- **Windows**: the `NGC7023-Setup-*.exe` installer (per-user, no admin needed).
-- **Linux**: the `NGC7023-x86_64.AppImage` (`chmod +x`, then run).
+- **Windows**: the `ngc7023_setup_windows.exe` installer (per-user, no admin needed).
+- **Linux**: the `ngc7023_x86-64_linux.AppImage` (`chmod +x`, then run).
 
 Prefer to build it yourself? See [Run from source](#run-from-source).
 
