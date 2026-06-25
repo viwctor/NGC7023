@@ -148,8 +148,8 @@ flowchart LR
 ## Roadmap
 
 - [x] Packaged installers for Windows and Linux
-- [ ] Auto-update download (not just notification)
-- [ ] More subtitle conveniences
+- [x] Auto-update download (not just notification)
+- [x] More subtitle conveniences
 
 ## License
 
